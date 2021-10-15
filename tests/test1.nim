@@ -8,4 +8,7 @@
 import sokol/app
 
 defineApp:
+  init:
+    echo isvalid()
+    echo dimension()
   app.windowTitle = "my window"
