@@ -1,4 +1,5 @@
 import ./private/backend
+import ./common
 
 {.compile(
   "../upstream/sokol_app.h",
@@ -242,6 +243,117 @@ type
 
 converter toRangePtr*(data: var openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data.len.csize_t)
 converter toRangePtr*(data: ptr openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data[].len.csize_t)
+
+{.push importc: "sapp_$1", cdecl.}
+proc isvalid*: bool
+
+proc width*: cint
+proc height*: cint
+proc widthf*: float32
+proc heightf*: float32
+
+proc color_format*: PixelFormat
+proc depth_format*: PixelFormat
+
+proc sample_count*: cint
+
+proc high_dpi*: bool
+proc dpi_scale*: float32
+
+proc show_keyboard(show: bool)
+proc keyboard_shown: bool
+
+proc is_fullscreen*: bool
+proc toggle_fullscreen*
+
+proc show_mouse(show: bool)
+proc mouse_shown: bool
+proc lock_mouse(lock: bool)
+proc mouse_locked: bool
+
+proc userdata*: pointer
+
+proc query_desc*: ptr AppDesc
+
+proc request_quit*
+proc cancel_quit*
+proc quit*
+
+proc consume_event*
+
+proc frame_count*: uint64
+
+proc set_clipboard_string*(str: cstring)
+proc get_clipboard_string*: cstring
+
+proc set_window_title*(title: cstring)
+proc set_icon*(icon: ptr IconDesc)
+
+proc get_num_dropped_files*: cint
+proc get_dropped_file_path*(index: cint): cstring
+
+proc gles2*: bool
+
+when defined(js):
+  proc html5_ask_leave_site*(ask: bool)
+  proc html5_get_dropped_file_size*(index: cint): uint32
+  # todo: html5_fetch_dropped_file
+
+when sokol_backend == "METAL":
+  proc metal_get_device*: pointer
+  proc metal_get_renderpass_descriptor*: pointer
+  proc metal_get_drawable*: pointer
+elif sokol_backend == "D3D11":
+  proc d3d11_get_device*: pointer
+  proc d3d11_get_device_context*: pointer
+  proc d3d11_get_swap_chain*: pointer
+  proc d3d11_get_render_target_view*: pointer
+  proc d3d11_get_depth_stencil_view*: pointer
+elif sokol_backend == "WGPU":
+  proc wgpu_get_device*: pointer
+  proc wgpu_get_render_view*: pointer
+  proc wgpu_get_resolve_view*: pointer
+  proc wgpu_get_depth_stencil_view*: pointer
+
+proc macos_get_window: pointer {.used.}
+proc ios_get_window: pointer {.used.}
+proc win32_get_hwnd: pointer {.used.}
+proc android_get_native_activity: pointer {.used.}
+{.pop.}
+
+type
+  DummyMouse = object
+  DummyKeyboard = object
+
+const mouse*: DummyMouse = DummyMouse()
+const keyboard*: DummyKeyboard = DummyKeyboard()
+
+{.push inline.}
+
+proc show*(_: static DummyMouse): bool = mouse_shown()
+proc `show=`*(_: static DummyMouse, show: bool) = show_mouse(show)
+proc lock*(_: static DummyMouse): bool = mouse_locked()
+proc `lock=`*(_: static DummyMouse, lock: bool) = lock_mouse(show)
+
+proc show*(_: static DummyKeyboard): bool = keyboard_shown()
+proc `show=`*(_: static DummyKeyboard, show: bool) = show_keyboard(show)
+
+proc dimension*     : tuple[width: int32, height: int32]     = (width: width(), height: height())
+proc dimensionFloat*: tuple[width: float32, height: float32] = (width: widthf(), height: heightf())
+
+when defined(windows):
+  type NativeWindowType* = int
+  proc getWindow*: NativeWindowType = cast[int](win32_get_hwnd())
+elif defined(macosx):
+  type NativeWindowType* = pointer
+  proc getWindow*: NativeWindowType = sapp_macos_get_window()
+elif defined(ios):
+  type NativeWindowType* = pointer
+  proc getWindow*: NativeWindowType = sapp_ios_get_window()
+elif defined(android):
+  type NativeWindowType* = pointer
+  proc getWindow*: NativeWindowType = sapp_android_get_native_activity()
+{.pop.}
 
 template defineApp*(contents: untyped) =
   block:
