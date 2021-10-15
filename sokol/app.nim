@@ -243,7 +243,20 @@ type
 converter toRangePtr*(data: var openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data.len.csize_t)
 converter toRangePtr*(data: ptr openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data[].len.csize_t)
 
-template startApp*(desc: AppDesc): cint =
-  proc sokol_main(argc: cint, argv: cstringArray): AppDesc {.exportc, cdecl.} =
-    return desc
-  sokol_entry(0, nil)
+template defineApp*(contents: untyped) =
+  block:
+    var app {.inject.}: AppDesc
+    template init(body: untyped) {.inject,used.} =
+      app.init = proc() {.cdecl.} = body
+    template frame(body: untyped) {.inject,used.} =
+      app.frame = proc() {.cdecl.} = body
+    template cleanup(body: untyped) {.inject,used.} =
+      app.cleanup = proc() {.cdecl.} = body
+    template event(e, body: untyped) {.inject,used.} =
+      app.event = proc(e: var Event) {.cdecl.} = body
+    template fail(msg, body: untyped) {.inject,used.} =
+      app.fail = proc(msg: cstring) {.cdecl.} = body
+    contents
+    proc sokol_main(argc: cint, argv: cstringArray): AppDesc {.exportc, cdecl.} =
+      return app
+    quit sokol_entry(0, nil)

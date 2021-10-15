@@ -7,4 +7,5 @@
 
 import sokol/app
 
-quit startApp AppDesc()
+defineApp:
+  app.windowTitle = "my window"
