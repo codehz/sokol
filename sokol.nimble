@@ -5,7 +5,7 @@ author        = "CodeHz"
 description   = "Sokol wrapper for nim"
 license       = "Zlib"
 srcDir        = "."
-
+installDirs   = @["upstream", "sokol"]
 
 # Dependencies
 
