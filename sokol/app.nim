@@ -1,6 +1,8 @@
 import ./private/backend
 import ./common
 
+export common
+
 {.compile(
   "../upstream/sokol_app.h",
   "-x c -Dmain=sokol_entry -DSOKOL_IMPL -DSOKOL_WIN32_FORCE_MAIN -DSOKOL_" & sokol_backend
@@ -59,9 +61,6 @@ type
   ImageDesc* = object
     width*, height*: cint
     pixels*: RangePtr
-  RangePtr* = object
-    head*: pointer
-    size*: csize_t
   Event* = object
     frameCount*: uint64
     kind*: EventKind
@@ -103,11 +102,11 @@ type
   KeyCode* {.pure, size(4).} = enum
     key_invalid       = 0
     key_space         = 32
-    key_apostrophe    = 39  
-    key_comma         = 44  
-    key_minus         = 45  
-    key_period        = 46  
-    key_slash         = 47  
+    key_apostrophe    = 39
+    key_comma         = 44
+    key_minus         = 45
+    key_period        = 46
+    key_slash         = 47
     key_0             = 48
     key_1             = 49
     key_2             = 50
@@ -118,8 +117,8 @@ type
     key_7             = 55
     key_8             = 56
     key_9             = 57
-    key_semicolon     = 59  
-    key_equal         = 61  
+    key_semicolon     = 59
+    key_equal         = 61
     key_a             = 65
     key_b             = 66
     key_c             = 67
@@ -146,12 +145,12 @@ type
     key_x             = 88
     key_y             = 89
     key_z             = 90
-    key_left_bracket  = 91  
-    key_backslash     = 92  
-    key_right_bracket = 93  
-    key_grave_accent  = 96  
-    key_world_1       = 161 
-    key_world_2       = 162 
+    key_left_bracket  = 91
+    key_backslash     = 92
+    key_right_bracket = 93
+    key_grave_accent  = 96
+    key_world_1       = 161
+    key_world_2       = 162
     key_escape        = 256
     key_enter         = 257
     key_tab           = 258
@@ -241,9 +240,6 @@ type
     mod_mmb   = 10
   Modifiers* {.size(4).} = set[Modifier]
 
-converter toRangePtr*(data: var openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data.len.csize_t)
-converter toRangePtr*(data: ptr openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data[].len.csize_t)
-
 {.push importc: "sapp_$1", cdecl.}
 proc isvalid*: bool
 
@@ -287,7 +283,7 @@ proc set_clipboard_string*(str: cstring)
 proc get_clipboard_string*: cstring
 
 proc set_window_title*(title: cstring)
-proc set_icon*(icon: ptr IconDesc)
+proc set_icon*(icon: ConstVIew[IconDesc])
 
 proc get_num_dropped_files*: cint
 proc get_dropped_file_path*(index: cint): cstring
