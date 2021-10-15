@@ -562,11 +562,11 @@ proc defaults*(desc: ConstView[ShaderDesc])  : ShaderDesc   {.importc: "sg_query
 proc defaults*(desc: ConstView[PipelineDesc]): PipelineDesc {.importc: "sg_query_pipeline_defaults".}
 proc defaults*(desc: ConstView[PassDesc])    : PassDesc     {.importc: "sg_query_pass_defaults".}
 
-proc alloc_buffer*(): Buffer
-proc alloc_image*(): Image
-proc alloc_shader*(): Shader
-proc alloc_pipeline*(): Pipeline
-proc alloc_pass*(): Pass
+proc alloc_buffer()  : Buffer
+proc alloc_image()   : Image
+proc alloc_shader()  : Shader
+proc alloc_pipeline(): Pipeline
+proc alloc_pass()    : Pass
 proc dealloc*(target: Buffer)   {.importc: "sg_dealloc_buffer".}
 proc dealloc*(target: Image)    {.importc: "sg_dealloc_image".}
 proc dealloc*(target: Shader)   {.importc: "sg_dealloc_shader".}
@@ -596,3 +596,9 @@ proc d3d11_device*: pointer
 proc mtl_device*: pointer
 proc mtl_render_command_encoder*: pointer
 {.pop.}
+
+proc alloc*(_: typedesc[Buffer]):   Buffer   = alloc_buffer()
+proc alloc*(_: typedesc[Image]):    Image    = alloc_image()
+proc alloc*(_: typedesc[Shader]):   Shader   = alloc_shader()
+proc alloc*(_: typedesc[Pipeline]): Pipeline = alloc_pipeline()
+proc alloc*(_: typedesc[Pass]):     Pass     = alloc_pass()
