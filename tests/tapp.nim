@@ -11,4 +11,5 @@ defineApp:
   init:
     echo isvalid()
     echo dimension()
+    request_quit()
   app.windowTitle = "my window"
