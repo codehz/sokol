@@ -10,3 +10,4 @@ installDirs   = @["upstream", "sokol"]
 # Dependencies
 
 requires "nim >= 1.4.8"
+requires "chroma >= 0.2.5 & < 0.3"
