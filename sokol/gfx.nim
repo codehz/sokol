@@ -532,8 +532,6 @@ converter toColorMaskInternal*(mask: ColorMasks): ColorMaskInternal =
   if c == 0: c = 16
   cast[ColorMaskInternal](c)
 
-proc is_gfx_valid*: bool {.importc: "sg_isvalid".}
-
 proc make*(desc: ConstView[BufferDesc])  : Buffer   {.importc: "sg_make_buffer".}
 proc make*(desc: ConstView[ImageDesc])   : Image    {.importc: "sg_make_image".}
 proc make*(desc: ConstView[ShaderDesc])  : Shader   {.importc: "sg_make_shader".}
@@ -586,6 +584,7 @@ proc fail*(target: Pass)     {.importc: "sg_fail_pass".}
 {.push importc: "sg_$1", cdecl.}
 proc setup*(desc: ConstView[Desc])
 proc shutdown*
+proc isvalid*: bool
 proc reset_state_cach*
 proc install_trace_hooks*(hooks: ConstView[TraceHooks])
 proc pushDebugGroup*(name: cstring)

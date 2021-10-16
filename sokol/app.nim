@@ -240,8 +240,8 @@ type
     mod_mmb   = 10
   Modifiers* {.size(4).} = set[Modifier]
 
-proc is_app_valid*: bool {.importc: "sapp_isvalid".}
 {.push importc: "sapp_$1", cdecl.}
+proc isvalid*: bool
 proc width*: uint32
 proc height*: uint32
 proc widthf*: float32
@@ -352,18 +352,18 @@ elif defined(android):
 
 template define_app*(contents: untyped) =
   block:
-    var app {.inject.}: AppDesc
+    var app_desc {.inject.}: AppDesc
     template init(body: untyped) {.inject,used.} =
-      app.init = proc() {.cdecl.} = body
+      app_desc.init = proc() {.cdecl.} = body
     template frame(body: untyped) {.inject,used.} =
-      app.frame = proc() {.cdecl.} = body
+      app_desc.frame = proc() {.cdecl.} = body
     template cleanup(body: untyped) {.inject,used.} =
-      app.cleanup = proc() {.cdecl.} = body
+      app_desc.cleanup = proc() {.cdecl.} = body
     template event(e, body: untyped) {.inject,used.} =
-      app.event = proc(e: var Event) {.cdecl.} = body
+      app_desc.event = proc(e: var Event) {.cdecl.} = body
     template fail(msg, body: untyped) {.inject,used.} =
-      app.fail = proc(msg: cstring) {.cdecl.} = body
+      app_desc.fail = proc(msg: cstring) {.cdecl.} = body
     contents
     proc sokol_main(argc: cint, argv: cstringArray): AppDesc {.exportc, cdecl.} =
-      return app
+      return app_desc
     quit sokol_entry(0, nil)

@@ -9,7 +9,7 @@ import sokol/app
 
 define_app:
   init:
-    echo is_app_valid()
-    echo dimension()
-    request_quit()
-  app.window_title = "my window"
+    echo app.isvalid()
+    echo app.dimension()
+    app.request_quit()
+  app_desc.window_title = "my window"
