@@ -64,11 +64,11 @@ type
     pf_etc2_rg11sn,
   RangePtr* = object
     head*: pointer
-    size*: csize_t
+    size*: int
   ConstView*[T] = distinct ptr T
 
-converter toRangePtr*(data: var openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data.len.csize_t)
-converter toRangePtr*(data: ptr openArray[byte]): RangePtr = RangePtr(head: data[0].addr, size: data[].len.csize_t)
+converter toRangePtr*[T](data: var openArray[T]): RangePtr = RangePtr(head: data[0].addr, size: sizeof(T) * data.len)
+converter toRangePtr*[T](data: ptr openArray[T]): RangePtr = RangePtr(head: data[0].addr, size: sizeof(T) * data[].len)
 
 converter toConstView*[T](data: T): ConstView[T] = ConstView unsafeAddr data
 converter toConstView*[T](data: ptr T): ConstView[T] = ConstView data
