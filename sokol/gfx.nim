@@ -249,22 +249,22 @@ type
     action: Action
     value: uint8
   PassAction* = object
-    startCanary: uint32
+    start_canary: uint32
     colors*: array[MAX_COLOR_ATTACHMENTS, ColorAttachmentAction]
     depth*: DepthAttachmentAction
     stencil*: StencilAttachmentAction
-    endCanary: uint32
+    end_canary: uint32
   Bindings* = object
-    startCanary: uint32
-    vertexBuffers*: array[MAX_SHADERSTAGE_BUFFERS, Buffer]
-    vertexBufferOffsets*: array[MAX_SHADERSTAGE_BUFFERS, int32]
-    indexBuffer*: Buffer
-    indexBufferOffset*: int32
-    vsImages*: array[MAX_SHADERSTAGE_IMAGES, Image]
-    fsImages*: array[MAX_SHADERSTAGE_IMAGES, Image]
-    endCanary: uint32
+    start_canary: uint32
+    vertex_buffers*: array[MAX_SHADERSTAGE_BUFFERS, Buffer]
+    vertex_buffer_offsets*: array[MAX_SHADERSTAGE_BUFFERS, int32]
+    index_buffer*: Buffer
+    index_buffer_offset*: int32
+    vs_images*: array[MAX_SHADERSTAGE_IMAGES, Image]
+    fs_images*: array[MAX_SHADERSTAGE_IMAGES, Image]
+    end_canary: uint32
   BufferDesc* = object
-    startCanary: uint32
+    start_canary: uint32
     size*: csize_t
     kind*: BufferKind
     usage*: Usage
@@ -274,63 +274,63 @@ type
     metal*: array[NUM_INFLIGHT_FRAMES, pointer]
     d3d11*: pointer
     wgpu*: pointer
-    endCanary: uint32
+    end_canary: uint32
   ImageData* = object
     subimage*: array[CubeFace, array[MAX_MIPMAPS, RangePtr]]
   ImageDesc* = object
-    startCanary: uint32
+    start_canary: uint32
     kind*: ImageKind
-    renderTarget*: bool
+    render_target*: bool
     width*, height*: uint32
-    numSlices*, numMipmaps*: uint32
+    num_slices*, num_mipmaps*: uint32
     usage*: Usage
-    pixelFormat*: PixelFormat
-    sampleCount*: uint32
-    minFilter*, magFilter*: Filter
-    wrapU*, wrapV*, wrapW*: Wrap
-    borderColor*: BorderColor
-    maxAnisotropy*: uint32
-    minLod*, maxLod*: float32
+    pixel_format*: PixelFormat
+    sample_count*: uint32
+    min_filter*, mag_filter*: Filter
+    wrap_u*, wrap_v*, wrap_w*: Wrap
+    border_color*: BorderColor
+    max_anisotropy*: uint32
+    min_lod*, max_lod*: float32
     data*: ImageData
     label*: cstring
-    openglTextures*: array[NUM_INFLIGHT_FRAMES, uint32]
-    openglTarget*: uint32
-    metalTextures*: array[NUM_INFLIGHT_FRAMES, pointer]
-    d3d11Texture*: pointer
-    d3d11ShaderResourceView*: pointer
-    wgpuTexture*: pointer
-    endCanary: uint32
+    opengl_textures*: array[NUM_INFLIGHT_FRAMES, uint32]
+    opengl_target*: uint32
+    metal_textures*: array[NUM_INFLIGHT_FRAMES, pointer]
+    d3d11_texture*: pointer
+    d3d11_shader_resource_view*: pointer
+    wgpu_texture*: pointer
+    end_canary: uint32
   ShaderAttributeDesc* = object
     name*: cstring
-    semName*: cstring
-    semIndex*: int32
+    sem_name*: cstring
+    sem_index*: int32
   ShaderUniformDesc* = object
     name*: cstring
     kind*: UniformKind
     count*: uint32
   ShaderUniformBlockDesc* = object
     name*: cstring
-    imageKind*: ImageKind
-    samplerKind*: SamplerKind
+    image_kind*: ImageKind
+    sampler_kind*: SamplerKind
   ShaderStageDesc* = object
     source*: cstring
     bytecode*: RangePtr
     entry*: cstring
-    d3d11Target*: cstring
-    uniformBlocks*: array[MAX_SHADERSTAGE_UBS, ShaderUniformBlockDesc]
+    d3d11_target*: cstring
+    uniform_blocks*: array[MAX_SHADERSTAGE_UBS, ShaderUniformBlockDesc]
     images*: array[MAX_SHADERSTAGE_IMAGES, ImageDesc]
   ShaderDesc* = object
-    startCanary: uint32
+    start_canary: uint32
     attr*: array[MAX_VERTEX_ATTRIBUTES, ShaderAttributeDesc]
     vs*, fs*: ShaderStageDesc
     label*: cstring
-    endCanary: uint32
+    end_canary: uint32
   BufferLayoutDesc* = object
     stride*: uint32
-    stepFunc*: VertexStep
-    stepRate*: uint32
+    step_func*: VertexStep
+    step_rate*: uint32
   VertexAttributeDesc* = object
-    bufferIndex*: uint32
+    buffer_index*: uint32
     offset*: uint32
     format*: VertexFormat
   LayoutDesc* = object
@@ -338,129 +338,129 @@ type
     attrs*: array[MAX_VERTEX_ATTRIBUTES, VertexAttributeDesc]
   StencilFaceState* = object
     compare*: CompareFunc
-    failOp*, depthFailOp*, passOp*: StencilOp
+    fail_op*, depth_fail_op*, pass_op*: StencilOp
   StencilState* = object
     enabled*: bool
     front*, back*: StencilFaceState
-    readMask*, writeMask*: uint8
+    read_mask*, write_mask*: uint8
     refc*: uint8
   DepthState* = object
-    pixelFormat*: PixelFormat
+    pixel_format*: PixelFormat
     compare*: CompareFunc
-    writeEnabled*: bool
-    bias*, biasSlopeScale*, biasClamp*: float32
+    write_enabled*: bool
+    bias*, bias_slope_scale*, bias_clamp*: float32
   BlendState* = object
     enabled*: bool
-    srcFactorRgb*, dstFactorRgb*: BlendFactor
-    opRgb*: BlendOp
-    srcFactorAlpha*, dstFactorAlpha*: BlendFactor
-    opAlpha*: BlendOp
+    src_factor_rgb*, dst_factor_rgb*: BlendFactor
+    op_rgb*: BlendOp
+    src_factor_alpha*, dst_factor_alpha*: BlendFactor
+    op_alpha*: BlendOp
   ColorState* = object
-    pixelFormat*: PixelFormat
-    writeMask*: ColorMaskInternal
+    pixel_format*: PixelFormat
+    write_mask*: ColorMaskInternal
     blend*: BlendState
   PipelineDesc* = object
-    startCanary: uint32
+    start_canary: uint32
     shader*: Shader
     layout*: LayoutDesc
     depth*: DepthState
     stencil*: StencilState
-    colorCount*: uint32
+    color_count*: uint32
     colors*: array[MAX_COLOR_ATTACHMENTS, ColorState]
-    primitiveKind*: PrimitiveKind
-    indexKind*: IndexKind
-    cullMode*: CullMode
-    faceWinding: FaceWinding
-    sampleCount*: uint32
-    blendColor*: Color
-    alphaToCoverageEnabled*: bool
+    primitive_kind*: PrimitiveKind
+    index_kind*: IndexKind
+    cull_mode*: CullMode
+    face_winding: FaceWinding
+    sample_count*: uint32
+    blend_color*: Color
+    alpha_to_coverage_enabled*: bool
     label*: cstring
-    endCanary: uint32
+    end_canary: uint32
   PassAttachmentDesc* = object
     image*: Image
-    mipLevel*: uint32
+    mip_level*: uint32
     slice*: uint32
   PassDesc* = object
-    startCanary: uint32
-    colorAtttachments*: array[MAX_COLOR_ATTACHMENTS, PassAttachmentDesc]
-    depthStencilAttachment*: PassAttachmentDesc
+    start_canary: uint32
+    color_atttachments*: array[MAX_COLOR_ATTACHMENTS, PassAttachmentDesc]
+    depth_stencil_attachment*: PassAttachmentDesc
     label*: cstring
-    endCanary: uint32
+    end_canary: uint32
   TraceHooks* = object
-    userData*: pointer
-    resetStateCache*: proc (user: pointer) {.cdecl.}
-    makeBuffer*: proc (desc: ConstView[BufferDesc], result: Buffer, user: pointer) {.cdecl.}
-    makeImage*: proc (desc: ConstView[ImageDesc], result: Image, user: pointer) {.cdecl.}
-    makeShader*: proc (desc: ConstView[ShaderDesc], result: Shader, user: pointer) {.cdecl.}
-    makePipeline*: proc (desc: ConstView[PipelineDesc], result: Pipeline, user: pointer) {.cdecl.}
-    makePass*: proc (desc: ConstView[PassDesc], result: Pass, user: pointer) {.cdecl.}
-    destroyBuffer*: proc (target: Buffer, user: pointer) {.cdecl.}
-    destroyImage*: proc (target: Image, user: pointer) {.cdecl.}
-    destroyShader*: proc (target: Shader, user: pointer) {.cdecl.}
-    destroyPipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
-    destroyPass*: proc (target: Pass, user: pointer) {.cdecl.}
-    updateBuffer*: proc (buf: Buffer, data: ConstView[RangePtr], user: pointer) {.cdecl.}
-    updateImage*: proc (img: Image, data: ConstView[ImageData], user: pointer) {.cdecl.}
-    appendBuffer*: proc (buf: Buffer, data: ConstView[RangePtr], user: pointer) {.cdecl.}
-    beginDefaultPass*: proc (action: PassAction, width, height: uint32, user: pointer) {.cdecl.}
-    beginPass*: proc (pass: Pass, action: PassAction, user: pointer) {.cdecl.}
-    applyViewport*: proc (x, y, width, height: int32, originTopLeft: bool, user: pointer) {.cdecl.}
-    applyScissorRect*: proc (x, y, width, height: int32, originTopLeft: bool, user: pointer) {.cdecl.}
-    applyPipeline*: proc (pip: Pipeline, user: pointer) {.cdecl.}
-    applyBindings*: proc (bindings: ConstView[Bindings], user: pointer) {.cdecl.}
-    applyUniforms*: proc (stage: ShaderStage, ubIndex: uint32, data: ConstView[RangePtr], user: pointer) {.cdecl.}
+    userdata*: pointer
+    reset_state_cache*: proc (user: pointer) {.cdecl.}
+    make_buffer*: proc (desc: ConstView[BufferDesc], result: Buffer, user: pointer) {.cdecl.}
+    make_image*: proc (desc: ConstView[ImageDesc], result: Image, user: pointer) {.cdecl.}
+    make_shader*: proc (desc: ConstView[ShaderDesc], result: Shader, user: pointer) {.cdecl.}
+    make_pipeline*: proc (desc: ConstView[PipelineDesc], result: Pipeline, user: pointer) {.cdecl.}
+    make_pass*: proc (desc: ConstView[PassDesc], result: Pass, user: pointer) {.cdecl.}
+    destroy_buffer*: proc (target: Buffer, user: pointer) {.cdecl.}
+    destroy_image*: proc (target: Image, user: pointer) {.cdecl.}
+    destroy_shader*: proc (target: Shader, user: pointer) {.cdecl.}
+    destroy_pipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
+    destroy_pass*: proc (target: Pass, user: pointer) {.cdecl.}
+    update_buffer*: proc (buf: Buffer, data: ConstView[RangePtr], user: pointer) {.cdecl.}
+    update_image*: proc (img: Image, data: ConstView[ImageData], user: pointer) {.cdecl.}
+    append_buffer*: proc (buf: Buffer, data: ConstView[RangePtr], user: pointer) {.cdecl.}
+    begin_default_pass*: proc (action: PassAction, width, height: uint32, user: pointer) {.cdecl.}
+    begin_pass*: proc (pass: Pass, action: PassAction, user: pointer) {.cdecl.}
+    apply_viewport*: proc (x, y, width, height: int32, originTopLeft: bool, user: pointer) {.cdecl.}
+    apply_scissor_rect*: proc (x, y, width, height: int32, originTopLeft: bool, user: pointer) {.cdecl.}
+    apply_pipeline*: proc (pip: Pipeline, user: pointer) {.cdecl.}
+    apply_bindings*: proc (bindings: ConstView[Bindings], user: pointer) {.cdecl.}
+    apply_uniforms*: proc (stage: ShaderStage, ubIndex: uint32, data: ConstView[RangePtr], user: pointer) {.cdecl.}
     draw*: proc (baseElement, numElements, numInstances: uint32, user: pointer) {.cdecl.}
-    endPass*: proc (user: pointer) {.cdecl.}
+    end_pass*: proc (user: pointer) {.cdecl.}
     commit*: proc (user: pointer) {.cdecl.}
-    allocBuffer*: proc (result: Buffer, user: pointer) {.cdecl.}
-    allocImage*: proc (result: Image, user: pointer) {.cdecl.}
-    allocShader*: proc (result: Shader, user: pointer) {.cdecl.}
-    allocPipeline*: proc (result: Pipeline, user: pointer) {.cdecl.}
-    allocPass*: proc (result: Pass, user: pointer) {.cdecl.}
-    deallocBuffer*: proc (target: Buffer, user: pointer) {.cdecl.}
-    deallocImage*: proc (target: Image, user: pointer) {.cdecl.}
-    deallocShader*: proc (target: Shader, user: pointer) {.cdecl.}
-    deallocPipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
-    deallocPass*: proc (target: Pass, user: pointer) {.cdecl.}
-    initBuffer*: proc (target: Buffer, desc: ConstView[BufferDesc], user: pointer) {.cdecl.}
-    initImage*: proc (target: Image, desc: ConstView[ImageDesc], user: pointer) {.cdecl.}
-    initShader*: proc (target: Shader, desc: ConstView[ShaderDesc], user: pointer) {.cdecl.}
-    initPipeline*: proc (target: Pipeline, desc: ConstView[PipelineDesc], user: pointer) {.cdecl.}
-    initPass*: proc (target: Pass, desc: ConstView[PassDesc], user: pointer) {.cdecl.}
-    uninitBuffer*: proc (target: Buffer, user: pointer) {.cdecl.}
-    uninitImage*: proc (target: Image, user: pointer) {.cdecl.}
-    uninitShader*: proc (target: Shader, user: pointer) {.cdecl.}
-    uninitPipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
-    uninitPass*: proc (target: Pass, user: pointer) {.cdecl.}
-    failBuffer*: proc (target: Buffer, user: pointer) {.cdecl.}
-    failImage*: proc (target: Image, user: pointer) {.cdecl.}
-    failShader*: proc (target: Shader, user: pointer) {.cdecl.}
-    failPipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
-    failPass*: proc (target: Pass, user: pointer) {.cdecl.}
-    pushDebugGroup*: proc (name: cstring, user: pointer) {.cdecl.}
-    popDebugGroup*: proc (user: pointer) {.cdecl.}
-    errBufferPoolExhausted*: proc (user: pointer) {.cdecl.}
-    errImagePoolExhausted*: proc (user: pointer) {.cdecl.}
-    errShaderPoolExhausted*: proc (user: pointer) {.cdecl.}
-    errPipelinePoolExhausted*: proc (user: pointer) {.cdecl.}
-    errPassPoolExhausted*: proc (user: pointer) {.cdecl.}
-    errContextMismatch*: proc (user: pointer) {.cdecl.}
-    errPassInvalid*: proc (user: pointer) {.cdecl.}
-    errDrawInvalid*: proc (user: pointer) {.cdecl.}
-    errBindingsInvalid*: proc (user: pointer) {.cdecl.}
+    alloc_buffer*: proc (result: Buffer, user: pointer) {.cdecl.}
+    alloc_image*: proc (result: Image, user: pointer) {.cdecl.}
+    alloc_shader*: proc (result: Shader, user: pointer) {.cdecl.}
+    alloc_pipeline*: proc (result: Pipeline, user: pointer) {.cdecl.}
+    alloc_pass*: proc (result: Pass, user: pointer) {.cdecl.}
+    dealloc_buffer*: proc (target: Buffer, user: pointer) {.cdecl.}
+    dealloc_image*: proc (target: Image, user: pointer) {.cdecl.}
+    dealloc_shader*: proc (target: Shader, user: pointer) {.cdecl.}
+    dealloc_pipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
+    dealloc_pass*: proc (target: Pass, user: pointer) {.cdecl.}
+    init_buffer*: proc (target: Buffer, desc: ConstView[BufferDesc], user: pointer) {.cdecl.}
+    init_image*: proc (target: Image, desc: ConstView[ImageDesc], user: pointer) {.cdecl.}
+    init_shader*: proc (target: Shader, desc: ConstView[ShaderDesc], user: pointer) {.cdecl.}
+    init_pipeline*: proc (target: Pipeline, desc: ConstView[PipelineDesc], user: pointer) {.cdecl.}
+    init_pass*: proc (target: Pass, desc: ConstView[PassDesc], user: pointer) {.cdecl.}
+    uninit_buffer*: proc (target: Buffer, user: pointer) {.cdecl.}
+    uninit_image*: proc (target: Image, user: pointer) {.cdecl.}
+    uninit_shader*: proc (target: Shader, user: pointer) {.cdecl.}
+    uninit_pipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
+    uninit_pass*: proc (target: Pass, user: pointer) {.cdecl.}
+    fail_buffer*: proc (target: Buffer, user: pointer) {.cdecl.}
+    fail_image*: proc (target: Image, user: pointer) {.cdecl.}
+    fail_shader*: proc (target: Shader, user: pointer) {.cdecl.}
+    fail_pipeline*: proc (target: Pipeline, user: pointer) {.cdecl.}
+    fail_pass*: proc (target: Pass, user: pointer) {.cdecl.}
+    push_debug_group*: proc (name: cstring, user: pointer) {.cdecl.}
+    pop_debug_group*: proc (user: pointer) {.cdecl.}
+    err_buffer_pool_exhausted*: proc (user: pointer) {.cdecl.}
+    err_image_pool_exhausted*: proc (user: pointer) {.cdecl.}
+    err_shader_pool_exhausted*: proc (user: pointer) {.cdecl.}
+    err_pipeline_pool_exhausted*: proc (user: pointer) {.cdecl.}
+    err_pass_pool_exhausted*: proc (user: pointer) {.cdecl.}
+    err_context_mismatch*: proc (user: pointer) {.cdecl.}
+    err_pass_invalid*: proc (user: pointer) {.cdecl.}
+    err_draw_invalid*: proc (user: pointer) {.cdecl.}
+    err_bindings_invalid*: proc (user: pointer) {.cdecl.}
   SlotInfo* = object
     state*: ResourceState
-    resId*, ctxId*: uint32
+    res_id*, ctx_id*: uint32
   BufferInfo* = object
     slot*: SlotInfo
-    updateFrameIndex*, appendFrameIndex*: uint32
-    appendPos*: uint32
-    appendOverflow*: bool
-    numSlots*, activeSlot*: uint32
+    update_frame_index*, append_frame_index*: uint32
+    append_pos*: uint32
+    append_overflow*: bool
+    num_slots*, active_slot*: uint32
   ImageInfo* = object
     slot*: SlotInfo
-    updateFrameIndex*: uint32
-    numSlots*, activeSlot*: uint32
+    update_frame_index*: uint32
+    num_slots*, active_slot*: uint32
     width*, height*: uint32
   ShaderInfo* = object
     slot*: SlotInfo
@@ -469,49 +469,49 @@ type
   PassInfo* = object
     slot*: SlotInfo
   GlContextDesc* = object
-    forceGles2*: bool
+    force_gles2*: bool
   MetalContextDesc* = object
     device*: pointer
-    renderpassDescriptor*: proc: pointer {.cdecl.}
-    renderpassDescriptorUserdata*: proc: pointer {.cdecl.}
+    renderpass_descriptor*: proc: pointer {.cdecl.}
+    renderpass_descriptor_userdata*: proc: pointer {.cdecl.}
     drawable*: proc: pointer {.cdecl.}
-    drawableUserdata*: proc: pointer {.cdecl.}
-    userData*: pointer
+    drawable_userdata*: proc: pointer {.cdecl.}
+    userdata*: pointer
   D3d11ContextDesc* = object
-    device*: pointer
-    renderTargetView*: proc: pointer {.cdecl.}
-    renderTargetViewUserdata*: proc: pointer {.cdecl.}
-    depthStencilView*: proc: pointer {.cdecl.}
-    depthStencilViewUserdata*: proc: pointer {.cdecl.}
-    userData*: pointer
+    device*, device_context*: pointer
+    render_target_view*: proc: pointer {.cdecl.}
+    render_target_view_userdata*: proc: pointer {.cdecl.}
+    depth_stencil_view*: proc: pointer {.cdecl.}
+    depth_stencil_view_userdata*: proc: pointer {.cdecl.}
+    userdata*: pointer
   WgpuContextDesc* = object
     device*: pointer
-    renderView*: proc: pointer {.cdecl.}
-    renderViewUserdata*: proc: pointer {.cdecl.}
-    resolveView*: proc: pointer {.cdecl.}
-    resolveViewUserdata*: proc: pointer {.cdecl.}
-    depthStencilView*: proc: pointer {.cdecl.}
-    depthStencilViewUserdata*: proc: pointer {.cdecl.}
-    userData*: pointer
+    render_view*: proc: pointer {.cdecl.}
+    render_view_userdata*: proc: pointer {.cdecl.}
+    resolve_view*: proc: pointer {.cdecl.}
+    resolve_view_userdata*: proc: pointer {.cdecl.}
+    depth_stencil_view*: proc: pointer {.cdecl.}
+    depth_stencil_view_userdata*: proc: pointer {.cdecl.}
+    userdata*: pointer
   ContextDesc* = object
-    colorFormat*, depthFormat*: PixelFormat
-    sampleCount*: uint32
+    color_format*, depth_format*: PixelFormat
+    sample_count*: uint32
     gl*: GlContextDesc
     metal*: MetalContextDesc
     d3d11*: D3d11ContextDesc
     wgpu*: WgpuContextDesc
   Desc* = object
-    startCanary: uint32
-    bufferPoolSize*: uint32
-    imagePoolSize*: uint32
-    shaderPoolSize*: uint32
-    pipelinePoolSize*: uint32
-    passPoolSize*: uint32
-    contextPoolSize*: uint32
-    uniformPoolSize*: uint32
-    stagingPoolSize*: uint32
+    start_canary: uint32
+    buffer_pool_size*: uint32
+    image_pool_size*: uint32
+    shader_pool_size*: uint32
+    pipeline_pool_size*: uint32
+    pass_pool_size*: uint32
+    context_pool_size*: uint32
+    uniform_pool_size*: uint32
+    staging_pool_size*: uint32
     context*: ContextDesc
-    endCanary: uint32
+    end_canary: uint32
 
 converter toCompareFunc*(helper: CompareFuncHelper): CompareFunc =
   case helper:

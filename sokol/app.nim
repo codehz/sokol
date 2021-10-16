@@ -23,56 +23,56 @@ type
     cleanup*: proc () {.cdecl.}
     event*: proc (event: var Event) {.cdecl.} # todo
     fail*: proc (message: cstring) {.cdecl.} # todo
-    userData*: pointer
-    userInit*: proc (user: pointer) {.cdecl.}
-    userFrame*: proc (user: pointer) {.cdecl.}
-    userCleanup*: proc (user: pointer) {.cdecl.}
-    userEvent*: proc (event: var Event, user: pointer) {.cdecl.} # todo
-    userFail*: proc (message: cstring, user: pointer) {.cdecl.} # todo
+    user_data*: pointer
+    user_init*: proc (user: pointer) {.cdecl.}
+    user_frame*: proc (user: pointer) {.cdecl.}
+    user_cleanup*: proc (user: pointer) {.cdecl.}
+    user_event*: proc (event: var Event, user: pointer) {.cdecl.} # todo
+    user_fail*: proc (message: cstring, user: pointer) {.cdecl.} # todo
 
-    width*, height*: cint
-    sampleCount*: cint
-    swapInterval*: cint
-    highDpi*: bool
+    width*, height*: uint32
+    sample_count*: uint32
+    swap_interval*: uint32
+    high_dpi*: bool
     fullscreen*: bool
     alpha*: bool
-    windowTitle*: cstring
-    userCursor*: bool
-    enableClipboard*: bool
-    clipboardSize*: cint
-    enableDragndrop*: bool
-    maxDroppedFiles*: cint
-    maxDroppedFilesPathLength*: cint
+    window_title*: cstring
+    user_cursor*: bool
+    enable_clipboard*: bool
+    clipboard_size*: uint32
+    enable_dragndrop*: bool
+    max_dropped_files*: uint32
+    max_dropped_files_path_length*: uint32
     icon*: IconDesc
 
-    glForceGles2*: bool
-    win32ConsoleUtf8*: bool
-    win32ConsoleCreate*: bool
-    win32ConsoleAttach*: bool
-    html5CanvasName*: cstring
-    html5CanvasResize*: bool
-    html5PreserveDrawingBuffer*: bool
-    html5PremultipledAlpha*: bool
-    html5AskLeaveSite*: bool
-    iosKeyboardResizesCanvas*: bool
+    gl_force_gles2*: bool
+    win32_console_utf8*: bool
+    win32_console_create*: bool
+    win32_console_attach*: bool
+    html5_canvas_name*: cstring
+    html5_canvas_resize*: bool
+    html5_preserve_drawing_buffer*: bool
+    html5_premultipled_alpha*: bool
+    html5_ask_leave_site*: bool
+    ios_keyboard_resizes_canvas*: bool
   IconDesc* = object
     default*: bool
     images*: array[MAX_ICONIMAGES, ImageDesc]
   ImageDesc* = object
-    width*, height*: cint
+    width*, height*: uint32
     pixels*: RangePtr
   Event* = object
-    frameCount*: uint64
+    frame_count*: uint64
     kind*: EventKind
-    keyCode*: KeyCode
-    charCode*: uint32
-    keyRepeat*: bool
+    key_code*: KeyCode
+    char_code*: uint32
+    key_repeat*: bool
     modifiers*: Modifiers
-    mouseButton*: MouseButton
-    mouseX*, mouseY*, mouseDx*, mouseDy*, scrollX*, scrollY*: float32
-    numTouches*: cint
+    mouse_button*: MouseButton
+    mouse_x*, mouse_y*, mouse_dx*, mouse_dy*, scroll_x*, scroll_y*: float32
+    num_touches*: uint32
     touches*: array[MAX_TOUCHPOINTS, TouchPoint]
-    windowWidth*, windowHeight*, framebufferWidth*, framebufferHeight*: cint
+    window_width*, window_height*, framebuffer_width*, framebuffer_height*: uint32
   EventKind* {.pure, size(4).} = enum
     ev_invalid
     ev_keydown
@@ -243,15 +243,15 @@ type
 {.push importc: "sapp_$1", cdecl.}
 proc isvalid*: bool
 
-proc width*: cint
-proc height*: cint
+proc width*: uint32
+proc height*: uint32
 proc widthf*: float32
 proc heightf*: float32
 
 proc color_format*: PixelFormat
 proc depth_format*: PixelFormat
 
-proc sample_count*: cint
+proc sample_count*: uint32
 
 proc high_dpi*: bool
 proc dpi_scale*: float32
@@ -285,14 +285,14 @@ proc get_clipboard_string*: cstring
 proc set_window_title*(title: cstring)
 proc set_icon*(icon: ConstVIew[IconDesc])
 
-proc get_num_dropped_files*: cint
-proc get_dropped_file_path*(index: cint): cstring
+proc get_num_dropped_files*: uint32
+proc get_dropped_file_path*(index: uint32): cstring
 
 proc gles2*: bool
 
 when defined(js):
   proc html5_ask_leave_site*(ask: bool)
-  proc html5_get_dropped_file_size*(index: cint): uint32
+  proc html5_get_dropped_file_size*(index: uint32): uint32
   # todo: html5_fetch_dropped_file
 
 when sokol_backend == "METAL":
@@ -334,24 +334,24 @@ proc `lock=`*(_: static DummyMouse, lock: bool) = lock_mouse(show)
 proc show*(_: static DummyKeyboard): bool = keyboard_shown()
 proc `show=`*(_: static DummyKeyboard, show: bool) = show_keyboard(show)
 
-proc dimension*     : tuple[width: int32, height: int32]     = (width: width(), height: height())
-proc dimensionFloat*: tuple[width: float32, height: float32] = (width: widthf(), height: heightf())
+proc dimension* : tuple[width: uint32, height: uint32]   = (width: width(), height: height())
+proc dimensionf*: tuple[width: float32, height: float32] = (width: widthf(), height: heightf())
 
 when defined(windows):
   type NativeWindowType* = int
-  proc getWindow*: NativeWindowType = cast[int](win32_get_hwnd())
+  proc get_window*: NativeWindowType = cast[int](win32_get_hwnd())
 elif defined(macosx):
   type NativeWindowType* = pointer
-  proc getWindow*: NativeWindowType = sapp_macos_get_window()
+  proc get_window*: NativeWindowType = sapp_macos_get_window()
 elif defined(ios):
   type NativeWindowType* = pointer
-  proc getWindow*: NativeWindowType = sapp_ios_get_window()
+  proc get_window*: NativeWindowType = sapp_ios_get_window()
 elif defined(android):
   type NativeWindowType* = pointer
-  proc getWindow*: NativeWindowType = sapp_android_get_native_activity()
+  proc get_window*: NativeWindowType = sapp_android_get_native_activity()
 {.pop.}
 
-template defineApp*(contents: untyped) =
+template define_app*(contents: untyped) =
   block:
     var app {.inject.}: AppDesc
     template init(body: untyped) {.inject,used.} =
