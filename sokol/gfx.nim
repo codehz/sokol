@@ -164,6 +164,10 @@ type
     fw_default
     fw_ccw
     fw_cw
+  CompareFuncHelper* = enum
+    `==`, `!=`
+    `<`, `>`
+    `<=`, `>=`
   CompareFunc* {.pure, size: 4.} = enum
     cmp_default
     cmp_never
@@ -206,24 +210,30 @@ type
     bop_add
     bop_subtract
     bop_reverse_subtract
-  ColorMask* {.pure, size: 4.} = enum
-    cm_default
-    cm_r      = 0x1
-    cm_g      = 0x2
-    cm_rg     = 0x3
-    cm_b      = 0x4
-    cm_rb     = 0x5
-    cm_gb     = 0x6
-    cm_rgb    = 0x7
-    cm_a      = 0x8
-    cm_ra     = 0x9
-    cm_ga     = 0xa
-    cm_rga    = 0xb
-    cm_ba     = 0xc
-    cm_rba    = 0xd
-    cm_gba    = 0xe
-    cm_rgba   = 0xf
-    cm_none   = 0x10
+  ColorMask* {.pure.} = enum
+    cm_r
+    cm_g
+    cm_b
+    cm_a
+  ColorMasks* {.size: 4.} = set[ColorMask]
+  ColorMaskInternal {.pure, size: 4.} = enum
+    cmi_default
+    cmi_r      = 0x1
+    cmi_g      = 0x2
+    cmi_rg     = 0x3
+    cmi_b      = 0x4
+    cmi_rb     = 0x5
+    cmi_gb     = 0x6
+    cmi_rgb    = 0x7
+    cmi_a      = 0x8
+    cmi_ra     = 0x9
+    cmi_ga     = 0xa
+    cmi_rga    = 0xb
+    cmi_ba     = 0xc
+    cmi_rba    = 0xd
+    cmi_gba    = 0xe
+    cmi_rgba   = 0xf
+    cmi_none   = 0x10
   Action* {.pure, size: 4.} = enum
     action_default
     action_clear
@@ -347,7 +357,7 @@ type
     opAlpha*: BlendOp
   ColorState* = object
     pixelFormat*: PixelFormat
-    writeMask*: ColorMask
+    writeMask*: ColorMaskInternal
     blend*: BlendState
   PipelineDesc* = object
     startCanary: uint32
@@ -502,6 +512,24 @@ type
     stagingPoolSize*: uint32
     context*: ContextDesc
     endCanary: uint32
+
+converter toCompareFunc*(helper: CompareFuncHelper): CompareFunc =
+  case helper:
+  of `==`: cmp_equal
+  of `!=`: cmp_not_equal
+  of `<` : cmp_less
+  of `>` : cmp_greater
+  of `<=`: cmp_less_equal
+  of `>=`: cmp_greater_equal
+
+converter toColorMaskInternal*(mask: ColorMasks): ColorMaskInternal =
+  var c = 0
+  if cm_r in mask: c += 1
+  if cm_g in mask: c += 2
+  if cm_b in mask: c += 4
+  if cm_a in mask: c += 8
+  if c == 0: c = 16
+  cast[ColorMaskInternal](c)
 
 {.push importc: "sg_$1", cdecl.}
 proc setup*(desc: ConstView[Desc])
