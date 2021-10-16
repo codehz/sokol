@@ -1,0 +1,4 @@
+*
+!config.nims
+!*.nim
+!.gitignore
