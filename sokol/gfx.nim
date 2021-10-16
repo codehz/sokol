@@ -3,6 +3,7 @@ import ./common
 from chroma import Color
 
 export Color
+export common
 
 {.compile(
   "../upstream/sokol_gfx.h",
@@ -531,14 +532,7 @@ converter toColorMaskInternal*(mask: ColorMasks): ColorMaskInternal =
   if c == 0: c = 16
   cast[ColorMaskInternal](c)
 
-{.push importc: "sg_$1", cdecl.}
-proc setup*(desc: ConstView[Desc])
-proc shutdown*
-proc isvalid*: bool
-proc reset_state_cach*
-proc install_trace_hooks*(hooks: ConstView[TraceHooks])
-proc pushDebugGroup*(name: cstring)
-proc popDebugGroup*
+proc is_gfx_valid*: bool {.importc: "sg_isvalid".}
 
 proc make*(desc: ConstView[BufferDesc])  : Buffer   {.importc: "sg_make_buffer".}
 proc make*(desc: ConstView[ImageDesc])   : Image    {.importc: "sg_make_image".}
@@ -553,6 +547,50 @@ proc destroy*(target: Pass)     {.importc: "sg_destroy_pass".}
 proc update*(buf: Buffer, data: ConstView[RangePtr]) {.importc: "sg_update_buffer".}
 proc update*(img: Image, data: ConstView[ImageData]) {.importc: "sg_update_image".}
 proc append*(buf: Buffer, data: ConstView[RangePtr]) {.importc: "sg_append_buffer".}
+proc state*(target: Buffer)  : ResourceState {.importc: "sg_query_buffer_state".}
+proc state*(target: Image)   : ResourceState {.importc: "sg_query_image_state".}
+proc state*(target: Shader)  : ResourceState {.importc: "sg_query_shader_state".}
+proc state*(target: Pipeline): ResourceState {.importc: "sg_query_pipeline_state".}
+proc state*(target: Pass)    : ResourceState {.importc: "sg_query_pass_state".}
+proc info*(target: Buffer)  : BufferInfo   {.importc: "sg_query_buffer_info".}
+proc info*(target: Image)   : ImageInfo    {.importc: "sg_query_image_info".}
+proc info*(target: Shader)  : ShaderInfo   {.importc: "sg_query_shader_info".}
+proc info*(target: Pipeline): PipelineInfo {.importc: "sg_query_pipeline_info".}
+proc info*(target: Pass)    : PassInfo     {.importc: "sg_query_pass_info".}
+proc defaults*(desc: ConstView[BufferDesc])  : BufferDesc   {.importc: "sg_query_buffer_defaults".}
+proc defaults*(desc: ConstView[ImageDesc])   : ImageDesc    {.importc: "sg_query_image_defaults".}
+proc defaults*(desc: ConstView[ShaderDesc])  : ShaderDesc   {.importc: "sg_query_shader_defaults".}
+proc defaults*(desc: ConstView[PipelineDesc]): PipelineDesc {.importc: "sg_query_pipeline_defaults".}
+proc defaults*(desc: ConstView[PassDesc])    : PassDesc     {.importc: "sg_query_pass_defaults".}
+proc dealloc*(target: Buffer)   {.importc: "sg_dealloc_buffer".}
+proc dealloc*(target: Image)    {.importc: "sg_dealloc_image".}
+proc dealloc*(target: Shader)   {.importc: "sg_dealloc_shader".}
+proc dealloc*(target: Pipeline) {.importc: "sg_dealloc_pipeline".}
+proc dealloc*(target: Pass)     {.importc: "sg_dealloc_pass".}
+proc init*(target: Buffer,   desc: ConstView[BufferDesc])   {.importc: "sg_init_buffer".}
+proc init*(target: Image,    desc: ConstView[ImageDesc])    {.importc: "sg_init_image".}
+proc init*(target: Shader,   desc: ConstView[ShaderDesc])   {.importc: "sg_init_shader".}
+proc init*(target: Pipeline, desc: ConstView[PipelineDesc]) {.importc: "sg_init_pipeline".}
+proc init*(target: Pass,     desc: ConstView[PassDesc])     {.importc: "sg_init_pass".}
+proc uninit*(target: Buffer)  : bool {.importc: "sg_uninit_buffer".}
+proc uninit*(target: Image)   : bool {.importc: "sg_uninit_image".}
+proc uninit*(target: Shader)  : bool {.importc: "sg_uninit_shader".}
+proc uninit*(target: Pipeline): bool {.importc: "sg_uninit_pipeline".}
+proc uninit*(target: Pass)    : bool {.importc: "sg_uninit_pass".}
+proc fail*(target: Buffer)   {.importc: "sg_fail_buffer".}
+proc fail*(target: Image)    {.importc: "sg_fail_image".}
+proc fail*(target: Shader)   {.importc: "sg_fail_shader".}
+proc fail*(target: Pipeline) {.importc: "sg_fail_pipeline".}
+proc fail*(target: Pass)     {.importc: "sg_fail_pass".}
+
+{.push importc: "sg_$1", cdecl.}
+proc setup*(desc: ConstView[Desc])
+proc shutdown*
+proc reset_state_cach*
+proc install_trace_hooks*(hooks: ConstView[TraceHooks])
+proc pushDebugGroup*(name: cstring)
+proc popDebugGroup*
+
 proc query_buffer_overflow*(buf: Buffer)
 
 proc begin_default_pass*(action: PassAction, width, height: uint32)
@@ -574,47 +612,12 @@ proc query_backend*: Backend
 proc query_features*: Features
 proc query_limits*: Limits
 proc query_pixelformat*(fmt: PixelFormat): PixelFormatInfo
-proc state*(target: Buffer)  : ResourceState {.importc: "sg_query_buffer_state".}
-proc state*(target: Image)   : ResourceState {.importc: "sg_query_image_state".}
-proc state*(target: Shader)  : ResourceState {.importc: "sg_query_shader_state".}
-proc state*(target: Pipeline): ResourceState {.importc: "sg_query_pipeline_state".}
-proc state*(target: Pass)    : ResourceState {.importc: "sg_query_pass_state".}
-proc info*(target: Buffer)  : BufferInfo   {.importc: "sg_query_buffer_info".}
-proc info*(target: Image)   : ImageInfo    {.importc: "sg_query_image_info".}
-proc info*(target: Shader)  : ShaderInfo   {.importc: "sg_query_shader_info".}
-proc info*(target: Pipeline): PipelineInfo {.importc: "sg_query_pipeline_info".}
-proc info*(target: Pass)    : PassInfo     {.importc: "sg_query_pass_info".}
-proc defaults*(desc: ConstView[BufferDesc])  : BufferDesc   {.importc: "sg_query_buffer_defaults".}
-proc defaults*(desc: ConstView[ImageDesc])   : ImageDesc    {.importc: "sg_query_image_defaults".}
-proc defaults*(desc: ConstView[ShaderDesc])  : ShaderDesc   {.importc: "sg_query_shader_defaults".}
-proc defaults*(desc: ConstView[PipelineDesc]): PipelineDesc {.importc: "sg_query_pipeline_defaults".}
-proc defaults*(desc: ConstView[PassDesc])    : PassDesc     {.importc: "sg_query_pass_defaults".}
 
 proc alloc_buffer()  : Buffer
 proc alloc_image()   : Image
 proc alloc_shader()  : Shader
 proc alloc_pipeline(): Pipeline
 proc alloc_pass()    : Pass
-proc dealloc*(target: Buffer)   {.importc: "sg_dealloc_buffer".}
-proc dealloc*(target: Image)    {.importc: "sg_dealloc_image".}
-proc dealloc*(target: Shader)   {.importc: "sg_dealloc_shader".}
-proc dealloc*(target: Pipeline) {.importc: "sg_dealloc_pipeline".}
-proc dealloc*(target: Pass)     {.importc: "sg_dealloc_pass".}
-proc init*(target: Buffer,   desc: ConstView[BufferDesc])   {.importc: "sg_init_buffer".}
-proc init*(target: Image,    desc: ConstView[ImageDesc])    {.importc: "sg_init_image".}
-proc init*(target: Shader,   desc: ConstView[ShaderDesc])   {.importc: "sg_init_shader".}
-proc init*(target: Pipeline, desc: ConstView[PipelineDesc]) {.importc: "sg_init_pipeline".}
-proc init*(target: Pass,     desc: ConstView[PassDesc])     {.importc: "sg_init_pass".}
-proc uninit*(target: Buffer)  : bool {.importc: "sg_uninit_buffer".}
-proc uninit*(target: Image)   : bool {.importc: "sg_uninit_image".}
-proc uninit*(target: Shader)  : bool {.importc: "sg_uninit_shader".}
-proc uninit*(target: Pipeline): bool {.importc: "sg_uninit_pipeline".}
-proc uninit*(target: Pass)    : bool {.importc: "sg_uninit_pass".}
-proc fail*(target: Buffer)   {.importc: "sg_fail_buffer".}
-proc fail*(target: Image)    {.importc: "sg_fail_image".}
-proc fail*(target: Shader)   {.importc: "sg_fail_shader".}
-proc fail*(target: Pipeline) {.importc: "sg_fail_pipeline".}
-proc fail*(target: Pass)     {.importc: "sg_fail_pass".}
 
 proc setup_context*: Context
 proc activate_context*(ctxId: Context)

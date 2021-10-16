@@ -240,9 +240,8 @@ type
     mod_mmb   = 10
   Modifiers* {.size(4).} = set[Modifier]
 
+proc is_app_valid*: bool {.importc: "sapp_isvalid".}
 {.push importc: "sapp_$1", cdecl.}
-proc isvalid*: bool
-
 proc width*: uint32
 proc height*: uint32
 proc widthf*: float32
