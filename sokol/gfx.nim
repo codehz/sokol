@@ -309,17 +309,20 @@ type
     name*: cstring
     kind*: UniformKind
     count*: uint32
-  ShaderUniformBlockDesc* = object
+  ShaderImageDesc* = object
     name*: cstring
     image_kind*: ImageKind
     sampler_kind*: SamplerKind
+  ShaderUniformBlockDesc* = object
+    size*: int
+    uniforms*: array[MAX_SHADERSTAGE_UBS, ShaderUniformDesc]
   ShaderStageDesc* = object
     source*: cstring
     bytecode*: RangePtr
     entry*: cstring
     d3d11_target*: cstring
     uniform_blocks*: array[MAX_SHADERSTAGE_UBS, ShaderUniformBlockDesc]
-    images*: array[MAX_SHADERSTAGE_IMAGES, ImageDesc]
+    images*: array[MAX_SHADERSTAGE_IMAGES, ShaderImageDesc]
   ShaderDesc* = object
     start_canary: uint32
     attr*: array[MAX_VERTEX_ATTRIBUTES, ShaderAttributeDesc]
