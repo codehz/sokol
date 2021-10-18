@@ -315,7 +315,7 @@ type
     sampler_kind*: SamplerKind
   ShaderUniformBlockDesc* = object
     size*: int
-    uniforms*: array[MAX_SHADERSTAGE_UBS, ShaderUniformDesc]
+    uniforms*: array[MAX_UB_MEMBERS, ShaderUniformDesc]
   ShaderStageDesc* = object
     source*: cstring
     bytecode*: RangePtr
@@ -325,7 +325,7 @@ type
     images*: array[MAX_SHADERSTAGE_IMAGES, ShaderImageDesc]
   ShaderDesc* = object
     start_canary: uint32
-    attr*: array[MAX_VERTEX_ATTRIBUTES, ShaderAttributeDesc]
+    attrs*: array[MAX_VERTEX_ATTRIBUTES, ShaderAttributeDesc]
     vs*, fs*: ShaderStageDesc
     label*: cstring
     end_canary: uint32
@@ -644,4 +644,4 @@ func defineShaderDesc*(
   assert attr.len <= MAX_VERTEX_ATTRIBUTES
   result = ShaderDesc(label: label, vs: vs, fs: fs)
   for i, a in attr.pairs:
-    result.attr[i] = a
+    result.attrs[i] = a

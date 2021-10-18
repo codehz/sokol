@@ -71,5 +71,6 @@ converter toRangePtr*[l, T](data: var array[l, T]): RangePtr = RangePtr(head: da
 converter toRangePtr*(data: openArray[byte]): RangePtr = RangePtr(head: data.unsafeAddr, size: data.len)
 converter toRangePtr*(data: var string): RangePtr = RangePtr(head: data.cstring, size: data.len)
 
-converter toConstView*[T](data: T): ConstView[T] = ConstView unsafeAddr data
-converter toConstView*[T](data: ptr T): ConstView[T] = ConstView data
+converter toConstView*[T](data: T): ConstView[T] {.inline.} = ConstView unsafeAddr data
+converter toConstView*[T](data: var T): ConstView[T] {.inline.} = ConstView addr data
+converter toConstView*[T](data: ptr T): ConstView[T] {.inline.} = ConstView data

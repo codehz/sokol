@@ -11,7 +11,7 @@ var vertices = [
   -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f
 ]
 
-let bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
+var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
 var bindings: Bindings
 
 print bufferdesc
