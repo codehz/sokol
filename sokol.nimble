@@ -12,17 +12,21 @@ installDirs   = @["upstream", "sokol", "tools"]
 requires "nim >= 1.4.8"
 requires "chroma >= 0.2.5 & < 0.3"
 
-task prepare, "Prepare sokol tools":
+task download, "Download sokol shdc":
   when defined(windows):
-    const filename = "sokol-shdc-windows.exe"
+    const filename = "win32/sokol-shdc.exe"
   elif defined(macosx):
-    const filename = "sokol-shdc-macos"
+    const filename = "osx/sokol-shdc"
   elif defined(linux):
-    const filename = "sokol-shdc-linux"
+    const filename = "linux/sokol-shdc"
   else:
     echo "not support yet"
-  exec "curl -Lo " & toExe("tools/sokol-shdc") & " https://github.com/codehz/sokol-tools/releases/download/prebuilt-1/"  & filename
+  const HASH = "QmVjMNUfxNwRsR7fZnv29ofMHJ9L5cXiPZbqwtJC8RHUT2"
+  exec "curl -Lo " & toExe("tools/sokol-shdc") & " https://ipfs.io/ipfs/" & HASH & "/"  & filename
+
+task prepare, "Prepare environment":
+  if not fileExists(toExe("tools/sokol-shdc")):
+    exec "nimble download"
 
 before install:
-  if not fileExists(toExe("tools/sokol-shdc")):
-    setCommand "prepare"
+  setCommand "prepare"

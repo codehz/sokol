@@ -635,3 +635,13 @@ proc alloc*(_: typedesc[Image]):    Image    = alloc_image()
 proc alloc*(_: typedesc[Shader]):   Shader   = alloc_shader()
 proc alloc*(_: typedesc[Pipeline]): Pipeline = alloc_pipeline()
 proc alloc*(_: typedesc[Pass]):     Pass     = alloc_pass()
+
+func defineShaderDesc*(
+  label: cstring;
+  attr: openarray[ShaderAttributeDesc];
+  vs, fs: ShaderStageDesc;
+): ShaderDesc =
+  assert attr.len <= MAX_VERTEX_ATTRIBUTES
+  result = ShaderDesc(label: label, vs: vs, fs: fs)
+  for i, a in attr.pairs:
+    result.attr[i] = a

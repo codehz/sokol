@@ -1,8 +1,7 @@
-when not defined(sokol_backend):
-  when defined(windows):
-    const sokol_backend* = "D3D11"
-  else:
-    const sokol_backend* = "GLCORE33"
+when defined(windows):
+  const sokol_backend* {.strdefine.} = "D3D11"
+else:
+  const sokol_backend* {.strdefine.} = "GLCORE33"
 
 when not defined(sokol_manuallink):
   when defined(windows):

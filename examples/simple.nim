@@ -1,30 +1,11 @@
 import sokol/[app, gfx, glue, tools]
+import print
+import macros
 
-static:
-  echo compile_shader"""
-@vs vs
-in vec4 position;
-in vec4 color0;
+expandMacros:
+  importshader "examples/simple.glsl"
 
-out vec4 color;
-
-void main() {
-    gl_Position = position;
-    color = color0;
-}
-@end
-
-@fs fs
-in vec4 color;
-out vec4 frag_color;
-
-void main() {
-    frag_color = color;
-}
-@end
-
-@program triangle vs fs
-"""
+print triangle
 
 define_app:
   init:
