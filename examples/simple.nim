@@ -1,6 +1,12 @@
 import sokol/[app, gfx, glue, tools]
+import macros
 
 compileshader staticRead "simple.glsl"
+
+macro dump(it: typed) =
+  echo treerepr it.getImpl
+
+dump triangle
 
 var vertices = [
   0.0f,  0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f,

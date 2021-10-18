@@ -34,6 +34,8 @@ elif sokol_backend == "WGPU":
 else:
   {.error: "Cannot detect shader language".}
 
+template attrdef(tab: untyped) {.pragma.}
+
 func packed(node: NimNode): NimNode =
   nnkPragmaExpr.newTree(node, nnkPragma.newTree(ident "packed"))
 
@@ -109,6 +111,15 @@ func decodeShaderStageDesc(node: NimNode, src: ShaderSource, structs: var Table[
           `s`.images[`idx`].sampler_kind = `sampler_kind`
   stmt.add s
   newBlockStmt(stmt)
+
+func attachattrs(name: NimNode, node: NimNode): NimNode =
+  let cv = newNimNode nnkTableConstr
+  for item in node:
+    if item.kind == nnkCommand and item[0].strVal == "attribute":
+      let name = ident item[1].strVal
+      let idx = item[2].intVal
+      cv.add newColonExpr(name, newLit idx)
+  nnkPragmaExpr.newTree name, nnkPragma.newTree(newColonExpr(bindSym "attrdef", cv))
 
 macro loadshader*(contents: static string) =
   result = newStmtList()
@@ -188,7 +199,7 @@ macro loadshader*(contents: static string) =
     definestr.add decodeShaderStageDesc(vs, vssrc, structs)
     definestr.add decodeShaderStageDesc(fs, fssrc, structs)
     programsec.add newIdentDefs(
-      name,
+      name.attachattrs(vs[3]),
       newEmptyNode(),
       definestr
     )
