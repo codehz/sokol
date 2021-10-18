@@ -1,9 +1,7 @@
 import sokol/[app, gfx, glue, tools]
 import print
-import macros
 
-expandMacros:
-  importshader "examples/simple.glsl"
+compileshader staticRead "simple.glsl"
 
 print triangle
 

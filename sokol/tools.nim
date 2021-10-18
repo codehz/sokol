@@ -117,7 +117,7 @@ macro loadshader*(contents: static string) =
   let staticsec = newStmtList()
   let programsec = newNimNode nnkLetSection
   var programs: seq[NimNode]
-  var sources: Table[string, ShaderSource] 
+  var sources: Table[string, ShaderSource]
   var structs: Table[string, int]
   result.add varsec
   result.add typesec
@@ -195,9 +195,6 @@ macro loadshader*(contents: static string) =
 
 macro compileshader*(content: static string) =
   let (output, code) = gorgeEx(shdcExec & " -i @ -l " & slang & " -o @ -f nim -b", content, "OwO")
-  doAssert code == 0, "Failed to compile shader: " & output
+  doAssert code == 0, "Failed to compile shader: " & output & " code: " & $code
   quote do:
     loadshader `output`
-
-template importshader*(filename: static string) =
-  compileshader(staticRead(filename))
