@@ -241,14 +241,14 @@ type
     action_load
     action_dontcare
   ColorAttachmentAction* = object
-    action: Action
-    color: Color
+    action*: Action
+    color*: Color
   DepthAttachmentAction* = object
-    action: Action
-    value: float32
+    action*: Action
+    value*: float32
   StencilAttachmentAction* = object
-    action: Action
-    value: uint8
+    action*: Action
+    value*: uint8
   PassAction* = object
     start_canary: uint32
     colors*: array[MAX_COLOR_ATTACHMENTS, ColorAttachmentAction]
