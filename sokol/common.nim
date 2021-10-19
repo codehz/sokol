@@ -68,6 +68,7 @@ type
   ConstView*[T] = distinct ptr T
 
 converter toRangePtr*[l, T](data: var array[l, T]): RangePtr = RangePtr(head: data.addr, size: sizeof(data))
+converter toRangePtr*[l, T](data: array[l, T]{`let`}): RangePtr = RangePtr(head: data.unsafeAddr, size: sizeof(data))
 converter toRangePtr*(data: openArray[byte]): RangePtr = RangePtr(head: data.unsafeAddr, size: data.len)
 converter toRangePtr*(data: var string): RangePtr = RangePtr(head: data.cstring, size: data.len)
 

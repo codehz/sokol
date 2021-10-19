@@ -36,6 +36,10 @@ else:
 
 template attrdef(tab: untyped) {.pragma.}
 
+template normalized*() {.pragma.}
+template underlying*(t: typed) {.pragma.}
+type uint10* = distinct uint16
+
 func packed(node: NimNode): NimNode =
   nnkPragmaExpr.newTree(node, nnkPragma.newTree(ident "packed"))
 
@@ -209,3 +213,114 @@ macro compileshader*(content: static string) =
   doAssert code == 0, "Failed to compile shader: " & output & " code: " & $code
   quote do:
     loadshader `output`
+
+func mapFormat(node: NimNode, normal: bool): VertexFormat =
+  if node.kind == nnkSym:
+    node.expectIdent "float32"
+    return vf_float
+  elif node.kind == nnkBracketExpr:
+    node[0].expectIdent "array"
+    let
+      base = node[2]
+      count = node[1].intVal
+    base.expectKind nnkSym
+    case base.strVal:
+    of "float32":
+      case count:
+      of 1:
+        return vf_float
+      of 2:
+        return vf_float2
+      of 3:
+        return vf_float3
+      of 4:
+        return vf_float4
+      else:
+        return vf_invalid
+    of "int8":
+      case count:
+      of 4:
+        return if normal: vf_byte4n else: vf_byte4
+      else:
+        return vf_invalid
+    of "uint8":
+      case count:
+      of 4:
+        return if normal: vf_ubyte4n else: vf_ubyte4
+      else:
+        return vf_invalid
+    of "int16":
+      case count:
+      of 2:
+        return if normal: vf_short2n else: vf_short2
+      of 4:
+        return if normal: vf_short4n else: vf_short4
+      else:
+        return vf_invalid
+    of "uint16":
+      case count:
+      of 2:
+        return vf_ushort2n
+      of 4:
+        return vf_ushort4n
+      else:
+        return vf_invalid
+    of "uint10":
+      case count:
+      of 2:
+        return vf_uint10_n2
+      else:
+        return vf_invalid
+
+macro layout*(it: typed, bufs: varargs[typed]): LayoutDesc =
+  var attrsmap: Table[string, int]
+  var buffers: seq[int]
+  var attrs: Table[int, tuple[buffer: int, offset: int, format: VertexFormat]]
+  let defs = it.getImpl
+  defs.expectKind nnkIdentDefs
+  defs[0][1].expectKind nnkPragma
+  for p in defs[0][1]:
+    if (p.kind == nnkCall or p.kind == nnkExprColonExpr) and p[0].strVal == "attrdef":
+      p[1].expectKind nnkTableConstr
+      for kv in p[1]:
+        attrsmap[kv[0].strVal] = int kv[1].intVal
+      break
+  for bufid, typ in bufs.pairs:
+    let
+      impl = typ.getImpl
+      deflist = impl[2][2]
+      symlist = impl[0].getType[2]
+    buffers.add typ.getSize
+    for i, sym in symlist.pairs:
+      let
+        def = deflist[i]
+        aname = sym.strVal
+        idx = attrsmap[aname]
+      var
+        deftype = def[1]
+        normal = false
+      if def[0].kind == nnkPragmaExpr:
+        for p in def[0][1]:
+          if p.kind == nnkSym and p.strVal == "normalized":
+            normal = true
+          if p.kind in {nnkExprColonExpr, nnkCall} and p[0].strVal == "underlying":
+            assert deftype.getSize == p[1].getSize
+            deftype = p[1]
+      let format = mapFormat(deftype, normal)
+      assert format != vf_invalid, "invalid type: " & repr deftype
+      attrs[idx] = (buffer: bufid, offset: sym.getOffset, format: mapFormat(deftype, normal))
+  let stmt = newNimNode nnkStmtList
+  let retsym = nskVar.genSym "ret"
+  stmt.add quote do: # nnkVarSection.newTree nnkIdentDefs.newTree(retsym, bindSym "LayoutDesc", newEmptyNode())
+    var `retsym`: LayoutDesc
+  for i, size in buffers:
+    stmt.add quote do:
+      `retsym`.buffers[`i`].stride = `size`
+  for i, (buffer, offset, format) in attrs:
+    let fmtlit = newLit format
+    stmt.add quote do:
+      `retsym`.attrs[`i`].buffer_index = `buffer`
+      `retsym`.attrs[`i`].offset = `offset`
+      `retsym`.attrs[`i`].format = `fmtlit`
+  stmt.add retsym
+  newBlockStmt(stmt)

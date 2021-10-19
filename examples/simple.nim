@@ -1,25 +1,23 @@
 import sokol/[app, gfx, glue, tools]
-import macros
+import chroma
 
 compileshader staticRead "simple.glsl"
 
-macro dump(it: typed) =
-  echo treerepr it.getImpl
+type
+  Vertex = object
+    position: array[3, float32]
+    color0 {.underlying: array[4, float32].}: Color
 
-dump triangle
-
-var vertices = [
-  0.0f,  0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f,
-  0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f
+let vertices = [
+  Vertex(position: [0.0f,  0.5f, 0.5f], color0: color(1.0f, 0.0f, 0.0f, 1.0f)),
+  Vertex(position: [0.5f, -0.5f, 0.5f], color0: color(0.0f, 1.0f, 0.0f, 1.0f)),
+  Vertex(position: [-0.5f, -0.5f, 0.5f], color0: color(0.0f, 0.0f, 1.0f, 1.0f)),
 ]
+const layout = triangle.layout Vertex
 
 var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
 var bindings: Bindings
 var pipeline: Pipeline
-var layout = LayoutDesc()
-layout.attrs[0].format = vf_float3
-layout.attrs[1].format = vf_float4
 var passAction: PassAction
 passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: Color(r: 0.0, g: 0.0, b: 0.0, a: 1.0))
 
