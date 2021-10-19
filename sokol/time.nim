@@ -1,7 +1,7 @@
 
 {.compile("../upstream/sokol_time.h", "-x c -DSOKOL_IMPL").}
 
-type Tick = distinct uint64
+type Tick* = distinct uint64
 
 proc `$`*(tick: Tick): string = "tick(" & $uint64(tick) & ")"
 
