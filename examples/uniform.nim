@@ -12,7 +12,7 @@ let vertices = [
   Vertex(position: vec3(0, 0.5, 0.5)),
 ]
 
-var p = [ColorInput(color: [1f32, 0, 0])]
+var p = ColorInput(color: [1f32, 0, 0])
 
 let layout = uniform_demo.layout Vertex
 var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
