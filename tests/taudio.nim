@@ -21,4 +21,6 @@ define_app:
     for val in buf.mitems:
       val = rand(-0.5..0.5)
     discard audio.push buf
+  cleanup:
+    audio.shutdown()
   app_desc.window_title = "my window"
