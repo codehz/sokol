@@ -31,4 +31,4 @@ task prepare, "Prepare environment":
     exec "nimble download"
 
 before install:
-  setCommand "prepare"
+  exec "nimble prepare"
