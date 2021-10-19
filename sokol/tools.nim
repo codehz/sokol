@@ -36,6 +36,9 @@ else:
 
 template attrdef(tab: untyped) {.pragma.}
 
+template instance*() {.pragma.}
+template step*(value: typed) {.pragma.}
+
 template normalized*() {.pragma.}
 template underlying*(t: typed) {.pragma.}
 type uint10* = distinct uint16
@@ -274,7 +277,7 @@ func mapFormat(node: NimNode, normal: bool): VertexFormat =
 
 macro layout*(it: typed, bufs: varargs[typed]): LayoutDesc =
   var attrsmap: Table[string, int]
-  var buffers: seq[int]
+  var buffers: seq[BufferLayoutDesc]
   var attrs: Table[int, tuple[buffer: int, offset: int, format: VertexFormat]]
   let defs = it.getImpl
   defs.expectKind nnkIdentDefs
@@ -289,8 +292,20 @@ macro layout*(it: typed, bufs: varargs[typed]): LayoutDesc =
     let
       impl = typ.getImpl
       deflist = impl[2][2]
-      symlist = impl[0].getType[2]
-    buffers.add typ.getSize
+      implname = impl[0]
+      implsym = if implname.kind == nnkSym: implname else: implname[0]
+      symlist = implsym.getType[2]
+    if implname.kind == nnkPragmaExpr:
+      let implpragma = implname[1]
+      var tmp = BufferLayoutDesc(stride: uint32 typ.getSize)
+      for p in implpragma:
+        if p.kind in {nnkExprColonExpr, nnkCall} and p[0].strVal == "step":
+          tmp.step_rate = uint32 p[1].intVal
+        elif p.kind == nnkSym and p.strVal == "instance":
+          tmp.step_func = vs_per_instance
+      buffers.add tmp
+    else:
+      buffers.add BufferLayoutDesc(stride: uint32 typ.getSize)
     for i, sym in symlist.pairs:
       let
         def = deflist[i]
@@ -313,9 +328,14 @@ macro layout*(it: typed, bufs: varargs[typed]): LayoutDesc =
   let retsym = nskVar.genSym "ret"
   stmt.add quote do: # nnkVarSection.newTree nnkIdentDefs.newTree(retsym, bindSym "LayoutDesc", newEmptyNode())
     var `retsym`: LayoutDesc
-  for i, size in buffers:
+  for i, info in buffers:
+    let stride = newLit info.stride
+    let step_func = newLit info.step_func
+    let step_rate = newLit info.step_rate
     stmt.add quote do:
-      `retsym`.buffers[`i`].stride = `size`
+      `retsym`.buffers[`i`].stride = `stride`
+      `retsym`.buffers[`i`].step_func = `step_func`
+      `retsym`.buffers[`i`].step_rate = `step_rate`
   for i, (buffer, offset, format) in attrs:
     let fmtlit = newLit format
     stmt.add quote do:

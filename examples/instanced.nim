@@ -1,21 +1,35 @@
 import sokol/[app, gfx, glue, tools]
 import chroma, vmath
 
-compileshader staticRead "simple.glsl"
+compileshader staticRead "instanced.glsl"
 
 type
   Vertex {.step: 1.} = object
     position {.underlying: array[3, float32].}: Vec3
     color0 {.underlying: array[4, float32].}: Color
+  Instance {.instance.} = object
+    offset {.underlying: array[3, float32].}: Vec3
 
 let vertices = [
   Vertex(position: vec3(0.0f,  0.5f, 0.5f),  color0: color(1, 0, 0)),
   Vertex(position: vec3(0.5f, -0.5f, 0.5f),  color0: color(0, 1, 0)),
   Vertex(position: vec3(-0.5f, -0.5f, 0.5f), color0: color(0, 0, 1)),
 ]
-const layout = triangle.layout Vertex
+let offsets = [
+  Instance(offset: vec3(0, -1, 0)),
+  Instance(offset: vec3(-1, 0, 0)),
+  Instance(offset: vec3(-1, -1, 0)),
+  Instance(offset: vec3(0, 0, 0)),
+  Instance(offset: vec3(0, 1, 0)),
+  Instance(offset: vec3(1, 0, 0)),
+  Instance(offset: vec3(1, 1, 0)),
+  Instance(offset: vec3(1, -1, 0)),
+  Instance(offset: vec3(-1, 1, 0)),
+]
+const layout = triangle.layout(Vertex, Instance)
 
-var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
+var bufferdesc = BufferDesc(data: vertices, label: "instanced-vertices")
+var instancedesc = BufferDesc(data: offsets, label: "instanced-instance")
 var bindings: Bindings
 var pipeline: Pipeline
 var passAction: PassAction
@@ -25,6 +39,7 @@ define_app:
   init:
     gfx.setup Desc(context: gfx_context())
     bindings.vertex_buffers[0] = gfx.make bufferdesc
+    bindings.vertex_buffers[1] = gfx.make instancedesc
     let shd = gfx.make triangle
     pipeline = gfx.make PipelineDesc(
       shader: shd,
@@ -35,7 +50,7 @@ define_app:
     begin_default_pass passAction, width(), height()
     apply_pipeline pipeline
     apply_bindings bindings
-    draw(0, 3, 1)
+    draw(0, 3, uint32 offsets.len)
     end_pass()
     commit()
   cleanup:
