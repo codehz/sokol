@@ -47,13 +47,12 @@ define_app:
       label: "triangle-pipeline"
     )
   frame:
-    begin_default_pass passAction, width(), height()
-    apply_pipeline pipeline
-    apply_bindings bindings
-    draw(0, 3, uint32 offsets.len)
-    end_pass()
-    commit()
+    default_pass passAction, width(), height():
+      pipeline.apply
+      bindings.apply
+      gfx.draw(0, 3, uint32 offsets.len)
+    gfx.commit()
   cleanup:
     gfx.shutdown()
   app_desc.high_dpi = true
-  app_desc.window_title = "simple"
+  app_desc.window_title = "instanced"

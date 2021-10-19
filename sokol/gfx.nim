@@ -583,6 +583,8 @@ proc fail*(target: Image)    {.importc: "sg_fail_image".}
 proc fail*(target: Shader)   {.importc: "sg_fail_shader".}
 proc fail*(target: Pipeline) {.importc: "sg_fail_pipeline".}
 proc fail*(target: Pass)     {.importc: "sg_fail_pass".}
+proc apply*(pip: Pipeline) {.importc: "sg_apply_pipeline".}
+proc apply*(bindings: ConstView[Bindings]) {.importc: "sg_apply_bindings".}
 
 {.push importc: "sg_$1", cdecl.}
 proc setup*(desc: ConstView[Desc])
@@ -602,8 +604,6 @@ proc apply_viewport*(x, y, width, height: int32, originTopLeft: bool)
 proc apply_viewportf*(x, y, width, height: float32, originTopLeft: bool)
 proc apply_scissor_rect*(x, y, width, height: int32, originTopLeft: bool)
 proc apply_scissor_rectf*(x, y, width, height: float32, originTopLeft: bool)
-proc apply_pipeline*(pip: Pipeline)
-proc apply_bindings*(bindings: ConstView[Bindings])
 proc apply_uniforms*(stage: ShaderStage, ubIndex: uint32, data: ConstView[RangePtr])
 proc draw*(baseElement, numElements, numInstances: uint32)
 proc end_pass*
@@ -635,6 +635,27 @@ proc alloc*(_: typedesc[Image]):    Image    = alloc_image()
 proc alloc*(_: typedesc[Shader]):   Shader   = alloc_shader()
 proc alloc*(_: typedesc[Pipeline]): Pipeline = alloc_pipeline()
 proc alloc*(_: typedesc[Pass]):     Pass     = alloc_pass()
+
+template default_pass*(action: PassAction, width, height: uint32, body: untyped) =
+  begin_default_pass(action, width, height)
+  try:
+    body
+  finally:
+    end_pass()
+
+template default_pass*(action: PassAction, width, height: float32, body: untyped) =
+  begin_default_passf(action, width, height)
+  try:
+    body
+  finally:
+    end_pass()
+
+template begin*(pass: Pass, action: PassAction) =
+  begin_pass(pass, action)
+  try:
+    body
+  finally:
+    end_pass()
 
 func defineShaderDesc*(
   label: cstring;
