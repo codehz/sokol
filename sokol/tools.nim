@@ -131,7 +131,7 @@ func attachattrs(name: NimNode, node: NimNode): NimNode =
 macro loadshader*(contents: static string) =
   result = newStmtList()
   let varsec = newNimNode nnkVarSection
-  let typesec = newNimNode nnkTypeSection
+  let typesec = newStmtList()
   let staticsec = newStmtList()
   let programsec = newNimNode nnkLetSection
   var programs: seq[NimNode]
@@ -172,7 +172,10 @@ macro loadshader*(contents: static string) =
         newEmptyNode(),
         obj
       )
-      typesec.add struct
+      let typedef = nnkTypeSection.newTree(struct)
+      typesec.add quote do:
+        when not declared(`name`):
+          `typedef`
       staticsec.add quote do:
         assert sizeof(`name`) == `size`, "struct size mismatched, please check custom type"
       structs[name.strVal] = int size

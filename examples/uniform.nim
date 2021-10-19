@@ -1,6 +1,9 @@
 import sokol/[app, gfx, glue, tools]
 import chroma, vmath
 
+type ColorInput {.packed.} = object
+  color {.align: 16.}: Color
+
 importshader "uniform.glsl"
 
 type Vertex = object
@@ -12,7 +15,7 @@ let vertices = [
   Vertex(position: vec3(0, 0.5, 0.5)),
 ]
 
-var p = ColorInput(color: [1f32, 0, 0])
+var p = ColorInput(color: color(1, 0, 0))
 
 let layout = uniform_demo.layout Vertex
 var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
@@ -35,8 +38,7 @@ define_app:
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
-      let uf: RangePtr = p
-      stage_fs.apply_uniforms(0, uf)
+      stage_fs.apply_uniforms(0, p)
       gfx.draw(0, 3, 1)
     gfx.commit()
   cleanup:
