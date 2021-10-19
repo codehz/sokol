@@ -1,4 +1,4 @@
-import std/[macros, options, strutils, tables, os]
+import std/[macros, options, strutils, tables, os, genasts]
 import ./private/backend
 import ./gfx
 import ./common
@@ -35,6 +35,7 @@ else:
   {.error: "Cannot detect shader language".}
 
 template attrdef(tab: untyped) {.pragma.}
+template uniforms(tab: untyped) {.pragma.}
 
 template instance*() {.pragma.}
 template step*(value: typed) {.pragma.}
@@ -119,14 +120,25 @@ func decodeShaderStageDesc(node: NimNode, src: ShaderSource, structs: var Table[
   stmt.add s
   newBlockStmt(stmt)
 
-func attachattrs(name: NimNode, node: NimNode): NimNode =
-  let cv = newNimNode nnkTableConstr
-  for item in node:
+func attachattrs(name, vs, fs: NimNode): NimNode =
+  let attrdefs = newNimNode nnkTableConstr
+  let vsdefs = newNimNode nnkTableConstr
+  let fsdefs = newNimNode nnkTableConstr
+  for item in vs:
     if item.kind == nnkCommand and item[0].strVal == "attribute":
       let name = ident item[1].strVal
       let idx = item[2].intVal
-      cv.add newColonExpr(name, newLit idx)
-  nnkPragmaExpr.newTree name, nnkPragma.newTree(newColonExpr(bindSym "attrdef", cv))
+      attrdefs.add newColonExpr(name, newLit idx)
+    elif item.kind == nnkCommand and item[0].strVal == "uniform":
+      vsdefs.add newColonExpr(item[2], item[1])
+  for item in fs:
+    if item.kind == nnkCommand and item[0].strVal == "uniform":
+      fsdefs.add newColonExpr(item[2], item[1])
+  result = nnkPragmaExpr.newTree(name, nnkPragma.newTree(newColonExpr(bindSym "attrdef", attrdefs)))
+  let uniformsdef = newNimNode nnkTableConstr
+  if vsdefs.len > 0: uniformsdef.add newColonExpr(ident "vs", vsdefs)
+  if fsdefs.len > 0: uniformsdef.add newColonExpr(ident "fs", fsdefs)
+  if uniformsdef.len > 0: result[1].add newColonExpr(bindSym "uniforms", uniformsdef)
 
 macro loadshader*(contents: static string) =
   result = newStmtList()
@@ -209,10 +221,30 @@ macro loadshader*(contents: static string) =
     definestr.add decodeShaderStageDesc(vs, vssrc, structs)
     definestr.add decodeShaderStageDesc(fs, fssrc, structs)
     programsec.add newIdentDefs(
-      name.attachattrs(vs[3]),
+      name.attachattrs(vs[3], fs[3]),
       newEmptyNode(),
       definestr
     )
+
+macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed) =
+  let maypragma = getImpl(desc)[0]
+  maypragma.expectKind nnkPragmaExpr
+  let pragmas = maypragma[1]
+  for pragma in pragmas:
+    if pragma.kind in { nnkCommand, nnkExprColonExpr } and pragma[0].strVal == "uniforms":
+      let uniforms = pragma[1]
+      for kv in uniforms:
+        kv.expectKind nnkExprColonExpr
+        let key = kv[0].strVal
+        let mapping = kv[1]
+        if (key == "fs" and stage == stage_fs) or (key == "vs" and stage == stage_vs):
+          for it in mapping:
+            if value.getTypeInst().strVal == it[1].strVal:
+              return genAst(idx = uint32 it[0].intVal, stage = stage, value):
+                apply_uniforms(stage, idx, value)
+          error("target uniform not found")
+      error("the shader stage don't have any uniforms")
+  error("invalid shader desc")
 
 macro compileshader*(content: static string) =
   let (output, code) = gorgeEx(shdcExec & " -i @ -l " & slang & " -o @ -f nim -b", content, "OwO")

@@ -38,7 +38,7 @@ define_app:
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
-      stage_fs.apply_uniforms(0, p)
+      uniform_demo[stage_fs] = p
       gfx.draw(0, 3, 1)
     gfx.commit()
   cleanup:
