@@ -1,4 +1,4 @@
-import std/[macros, options, strutils, tables]
+import std/[macros, options, strutils, tables, os]
 import ./private/backend
 import ./gfx
 import ./common
@@ -216,6 +216,12 @@ macro compileshader*(content: static string) =
   doAssert code == 0, "Failed to compile shader: " & output & " code: " & $code
   quote do:
     loadshader `output`
+
+macro importshader*(filename: typed{nkStrLit}) =
+  let path = filename.lineInfoObj.filename.joinPath("..", filename.strVal)
+  let content = staticRead path
+  quote do:
+    compileshader `content`
 
 func mapFormat(node: NimNode, normal: bool): VertexFormat =
   if node.kind == nnkSym:

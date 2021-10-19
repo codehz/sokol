@@ -1,7 +1,7 @@
 import sokol/[app, gfx, glue, tools]
 import chroma, vmath
 
-compileshader staticRead "simple.glsl"
+importshader "simple.glsl"
 
 type
   Vertex {.step: 1.} = object

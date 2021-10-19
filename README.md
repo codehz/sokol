@@ -7,7 +7,7 @@ import sokol/[app, gfx, glue, tools]
 import chroma, vmath
 
 # compile shader on the fly!
-compileshader staticRead "instanced.glsl"
+importshader "instanced.glsl" # see examples folder
 
 # build pipeline layout based on type declration
 type
