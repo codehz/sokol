@@ -1,17 +1,17 @@
 import sokol/[app, gfx, glue, tools]
-import chroma
+import chroma, vmath
 
 compileshader staticRead "simple.glsl"
 
 type
   Vertex = object
-    position: array[3, float32]
+    position {.underlying: array[3, float32].}: Vec3
     color0 {.underlying: array[4, float32].}: Color
 
 let vertices = [
-  Vertex(position: [0.0f,  0.5f, 0.5f], color0: color(1.0f, 0.0f, 0.0f, 1.0f)),
-  Vertex(position: [0.5f, -0.5f, 0.5f], color0: color(0.0f, 1.0f, 0.0f, 1.0f)),
-  Vertex(position: [-0.5f, -0.5f, 0.5f], color0: color(0.0f, 0.0f, 1.0f, 1.0f)),
+  Vertex(position: vec3(0.0f,  0.5f, 0.5f),  color0: color(1, 0, 0)),
+  Vertex(position: vec3(0.5f, -0.5f, 0.5f),  color0: color(0, 1, 0)),
+  Vertex(position: vec3(-0.5f, -0.5f, 0.5f), color0: color(0, 0, 1)),
 ]
 const layout = triangle.layout Vertex
 
@@ -19,7 +19,7 @@ var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
 var bindings: Bindings
 var pipeline: Pipeline
 var passAction: PassAction
-passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: Color(r: 0.0, g: 0.0, b: 0.0, a: 1.0))
+passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 define_app:
   init:
@@ -40,4 +40,5 @@ define_app:
     commit()
   cleanup:
     gfx.shutdown()
+  app_desc.high_dpi = true
   app_desc.window_title = "simple"
