@@ -38,18 +38,20 @@ delayinit state: instanced.build(vertices, offsets):
   vertex_buffers     = [vertices, offsets]
   colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
-define_app:
-  init:
+let app_desc = cascade AppDesc():
+  init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
     doinit()
-  frame:
+  frame = proc {.cdecl.} =
     default_pass state.action, width(), height():
       state.pipeline.apply
       state.bindings.apply
       gfx.draw(whole vertices, offsets.len)
     gfx.commit()
-  cleanup:
+  cleanup = proc {.cdecl.} =
     gfx.shutdown()
-  app_desc.high_dpi = true
-  app_desc.window_title = "instanced"
+  high_dpi = true
+  window_title = "instanced"
+
+quit app_desc.start()
 ```
