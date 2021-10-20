@@ -59,7 +59,7 @@ define_app:
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
-      gfx.draw(0, 3, uint32 offsets.len)
+      gfx.draw(whole vertices, offsets.len)
     gfx.commit()
   cleanup:
     gfx.shutdown()

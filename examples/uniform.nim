@@ -18,7 +18,7 @@ let vertices = [
 var p = ColorInput(color: color(1, 0, 0))
 
 let layout = uniform_demo.layout Vertex
-var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
+var bufferdesc = BufferDesc(data: vertices, label: "uniform-vertices")
 var bindings: Bindings
 var pipeline: Pipeline
 var passAction: PassAction
@@ -32,16 +32,16 @@ define_app:
     pipeline = gfx.make PipelineDesc(
       shader: shd,
       layout: layout,
-      label: "triangle-pipeline"
+      label: "uniform-pipeline"
     )
   frame:
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
       uniform_demo[stage_fs] = p
-      gfx.draw(0, 3, 1)
+      gfx.draw(0..3)
     gfx.commit()
   cleanup:
     gfx.shutdown()
   app_desc.high_dpi = true
-  app_desc.window_title = "simple"
+  app_desc.window_title = "uniform"

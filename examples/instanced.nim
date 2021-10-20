@@ -44,13 +44,13 @@ define_app:
     pipeline = gfx.make PipelineDesc(
       shader: shd,
       layout: layout,
-      label: "triangle-pipeline"
+      label: "instanced-pipeline"
     )
   frame:
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
-      gfx.draw(0, 3, uint32 offsets.len)
+      gfx.draw(whole vertices, offsets.len)
     gfx.commit()
   cleanup:
     gfx.shutdown()

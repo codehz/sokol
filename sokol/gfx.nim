@@ -586,6 +586,11 @@ proc fail*(target: Pass)     {.importc: "sg_fail_pass".}
 proc apply*(pip: Pipeline) {.importc: "sg_apply_pipeline".}
 proc apply*(bindings: ConstView[Bindings]) {.importc: "sg_apply_bindings".}
 
+proc sg_draw(baseElement, numElements, numInstances: uint32) {.importc.}
+
+proc draw*[T, U, I: Ordinal](elements: HSlice[T, U], instances: I = 1) =
+  sg_draw(uint32 elements.a, uint32 elements.b, uint32 instances)
+
 {.push importc: "sg_$1", cdecl.}
 proc setup*(desc: ConstView[Desc])
 proc shutdown*
@@ -605,7 +610,7 @@ proc apply_viewportf*(x, y, width, height: float32, originTopLeft: bool)
 proc apply_scissor_rect*(x, y, width, height: int32, originTopLeft: bool)
 proc apply_scissor_rectf*(x, y, width, height: float32, originTopLeft: bool)
 proc apply_uniforms(stage: ShaderStage, ubIndex: uint32, data: ConstView[RangePtr])
-proc draw*(baseElement, numElements, numInstances: uint32)
+# proc draw*(baseElement, numElements, numInstances: uint32)
 proc end_pass*
 proc commit*
 

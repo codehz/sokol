@@ -88,3 +88,5 @@ converter toRangePtr*[T](data: T): RangePtr =
 converter toConstView*[T](data: T): ConstView[T] {.inline.} = ConstView unsafeAddr data
 converter toConstView*[T](data: var T): ConstView[T] {.inline.} = ConstView addr data
 converter toConstView*[T](data: ptr T): ConstView[T] {.inline.} = ConstView data
+
+func whole*[T](data: openArray[T]): Slice[int] = 0..data.len
