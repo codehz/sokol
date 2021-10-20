@@ -350,20 +350,7 @@ elif defined(android):
   proc get_window*: NativeWindowType = sapp_android_get_native_activity()
 {.pop.}
 
-template define_app*(contents: untyped) =
-  block:
-    var app_desc {.inject.}: AppDesc
-    template init(body: untyped) {.inject,used.} =
-      app_desc.init = proc() {.cdecl.} = body
-    template frame(body: untyped) {.inject,used.} =
-      app_desc.frame = proc() {.cdecl.} = body
-    template cleanup(body: untyped) {.inject,used.} =
-      app_desc.cleanup = proc() {.cdecl.} = body
-    template event(e, body: untyped) {.inject,used.} =
-      app_desc.event = proc(e: var Event) {.cdecl.} = body
-    template fail(msg, body: untyped) {.inject,used.} =
-      app_desc.fail = proc(msg: cstring) {.cdecl.} = body
-    contents
-    proc sokol_main(argc: cint, argv: cstringArray): AppDesc {.exportc, cdecl.} =
-      return app_desc
-    quit sokol_entry(0, nil)
+template start*(desc: AppDesc): int =
+  proc sokol_main(argc: cint, argv: cstringArray): AppDesc {.exportc, cdecl.} =
+    return desc
+  sokol_entry(0, nil)

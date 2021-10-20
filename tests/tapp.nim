@@ -7,9 +7,10 @@
 
 import sokol/app
 
-define_app:
-  init:
-    echo app.isvalid()
-    echo app.dimension()
-    app.request_quit()
-  app_desc.window_title = "my window"
+var app_desc: AppDesc
+
+app_desc.init = proc {.cdecl.} =
+  assert app.isvalid()
+  app.request_quit()
+
+quit app_desc.start()
