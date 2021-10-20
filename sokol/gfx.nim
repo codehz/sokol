@@ -674,3 +674,8 @@ func defineShaderDesc*(
   result = ShaderDesc(label: label, vs: vs, fs: fs)
   for i, a in attr.pairs:
     result.attrs[i] = a
+
+type PassState* = object
+  action*: PassAction
+  pipeline*: Pipeline
+  bindings*: Bindings
