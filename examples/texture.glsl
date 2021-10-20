@@ -18,4 +18,4 @@ out vec4 frag_color;
 void main() { frag_color = texture(tex, vuv); }
 #pragma sokol @end
 
-#pragma sokol @program triangle vs fs
+#pragma sokol @program textured vs fs

@@ -18,4 +18,4 @@ out vec4 frag_color;
 void main() { frag_color = color; }
 #pragma sokol @end
 
-#pragma sokol @program triangle vs fs
+#pragma sokol @program instanced vs fs

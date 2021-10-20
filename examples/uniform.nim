@@ -1,4 +1,4 @@
-import sokol/[app, gfx, glue, tools]
+import sokol/[app, gfx, glue, tools, utils]
 import chroma, vmath
 import cascade
 
@@ -18,27 +18,18 @@ let vertices = [
 
 var p = ColorInput(color: color(1, 0, 0))
 
-let layout = uniform_demo.layout Vertex
-var bufferdesc = BufferDesc(data: vertices, label: "uniform-vertices")
-var bindings: Bindings
-var pipeline: Pipeline
-var passAction: PassAction
-passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
+delayinit state: uniform_demo.build(vertices):
+  vertex_buffers = [vertices]
+  colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 let app_desc = cascade AppDesc():
   init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
-    bindings.vertex_buffers[0] = gfx.make bufferdesc
-    let shd = gfx.make uniform_demo
-    pipeline = gfx.make PipelineDesc(
-      shader: shd,
-      layout: layout,
-      label: "uniform-pipeline"
-    )
+    doinit()
   frame = proc {.cdecl.} =
-    default_pass passAction, width(), height():
-      pipeline.apply
-      bindings.apply
+    default_pass state.action, width(), height():
+      state.pipeline.apply
+      state.bindings.apply
       uniform_demo[stage_fs] = p
       gfx.draw(0..3)
     gfx.commit()

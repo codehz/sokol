@@ -3,7 +3,7 @@ Sokol wrapper for nim
 
 example code:
 ```nim
-import sokol/[app, gfx, glue, tools]
+import sokol/[app, gfx, glue, tools, utils]
 import chroma, vmath
 
 # compile shader on the fly!
@@ -16,9 +16,6 @@ type
     color0 {.underlying: array[4, float32].}: Color
   Instance {.instance.} = object
     offset {.underlying: array[3, float32].}: Vec3
-
-# the magic happend
-const layout = triangle.layout(Vertex, Instance)
 
 let vertices = [
   Vertex(position: vec3(0.0f,  0.5f, 0.5f),  color0: color(1, 0, 0)),
@@ -37,28 +34,18 @@ let offsets = [
   Instance(offset: vec3(-1, 1, 0)),
 ]
 
-var bufferdesc = BufferDesc(data: vertices, label: "instanced-vertices")
-var instancedesc = BufferDesc(data: offsets, label: "instanced-instance")
-var bindings: Bindings
-var pipeline: Pipeline
-var passAction: PassAction
-passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
+delayinit state: instanced.build(vertices, offsets):
+  vertex_buffers     = [vertices, offsets]
+  colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 define_app:
   init:
     gfx.setup Desc(context: gfx_context())
-    bindings.vertex_buffers[0] = gfx.make bufferdesc
-    bindings.vertex_buffers[1] = gfx.make instancedesc
-    let shd = gfx.make triangle
-    pipeline = gfx.make PipelineDesc(
-      shader: shd,
-      layout: layout,
-      label: "triangle-pipeline"
-    )
+    doinit()
   frame:
-    default_pass passAction, width(), height():
-      pipeline.apply
-      bindings.apply
+    default_pass state.action, width(), height():
+      state.pipeline.apply
+      state.bindings.apply
       gfx.draw(whole vertices, offsets.len)
     gfx.commit()
   cleanup:

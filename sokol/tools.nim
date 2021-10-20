@@ -1,4 +1,4 @@
-import std/[macros, options, strutils, tables, os, genasts]
+import std/[macros, options, strutils, tables, os, genasts, sugar]
 import ./private/backend
 import ./gfx
 import ./common
@@ -345,8 +345,8 @@ macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
   for p in defs[0][1]:
     if (p.kind == nnkCall or p.kind == nnkExprColonExpr) and p[0].strVal == "attributes":
       p[1].expectKind nnkTableConstr
-      for kv in p[1]:
-        attrsmap[kv[0].strVal] = int kv[1].intVal
+      attrsmap = collect:
+        for kv in p[1]: { kv[0].strVal: int kv[1].intVal }
       break
   for bufid, typ in bufs.pairs:
     let
@@ -404,3 +404,112 @@ macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
       `retsym`.attrs[`i`].format = `fmtlit`
   stmt.add retsym
   newBlockStmt(stmt)
+
+func popped[K, V](tab: var Table[K, V], key: K): V =
+  doAssert tab.pop(key, result), $key & " not found or used already"
+
+macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, body: untyped{nkStmtList}): PassState =
+  result = newStmtList()
+  let tmp = nskVar.genSym "tmp"
+  result.add quote do:
+    var `tmp`: PassState
+  var dict = collect:
+    for kv in dictsrc: { kv.strVal: kv }
+  var vertex_buffers: seq[NimNode]
+  var index_buffer: NimNode
+  var outputs: Table[string, int]
+  var vs, fs: Table[string, int]
+  let st: NimNode = shader.getImpl[0][1]
+  for kv in st:
+    kv.expectKind nnkExprColonExpr
+    case kv[0].strVal:
+    of "outputs":
+      for col in kv[1]:
+        outputs[col[0].strVal] = int col[1].intVal
+    of "uniforms":
+      for typ in kv[1]:
+        case typ[0].strVal:
+        of "fs":
+          for col in typ[1]:
+            if col[1][0].strVal != "image": continue
+            fs[col[1][1].strVal] = int col[0].intVal
+        of "vs":
+          for col in typ[1]:
+            if col[1][0].strVal != "image": continue
+            vs[col[1][1].strVal] = int col[0].intVal
+  for item in body:
+    item.expectKind nnkAsgn
+    case item[0].kind:
+    of nnkIdent:
+      case item[0].strVal:
+      of "vertex_buffers":
+        for i, item in item[1].pairs:
+          let vitem = dict.popped(item.strVal)
+          vertex_buffers.add vitem
+          let label = newLit(shader.strVal & "-" & item.strVal)
+          result.add quote do:
+            `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(data: `vitem`, label: `label`)
+      of "index_buffer":
+        index_buffer = dict.popped(item[1].strVal)
+        let label = newLit(shader.strVal & "-indices")
+        result.add quote do:
+          `tmp`.bindings.index_buffer = make BufferDesc(data: `index_buffer`, kind: bk_index, label: `label`)
+      else:
+        error("unknown params: " & item[0].strVal)
+    of nnkBracketExpr:
+      let bidx = item[0][1]
+      case item[0][0].kind:
+      of nnkIdent:
+        case item[0][0].strVal:
+        of "fs_images":
+          let imgidx = fs.popped(bidx.strVal)
+          let val = dict.popped(item[1].strVal)
+          var timg: NimNode
+          if val.getTypeInst.sameType getType(Image):
+            timg = val
+          elif val.getTypeInst.sameType getType(ImageDesc):
+            timg = newCall(bindSym "make", val)
+          result.add quote do:
+            `tmp`.bindings.fs_images[`imgidx`] = `timg`
+        of "vs_images":
+          let imgidx = vs.popped(bidx.strVal)
+          let val = dict.popped(item[1].strVal)
+          var timg: NimNode
+          if val.getTypeInst.sameType getType(Image):
+            timg = val
+          elif val.getTypeInst.sameType getType(ImageDesc):
+            timg = newCall(bindSym "make", val)
+          result.add quote do:
+            `tmp`.bindings.vs_images[`imgidx`] = `timg`
+        of "colors":
+          let colidx = outputs.popped(bidx.strVal)
+          let val = item[1]
+          result.add quote do:
+            `tmp`.action.colors[`colidx`] = `val`
+        else:
+          error("unknown attr " & item[0][0].strVal)
+      else:
+        error("invalid stmt: " & repr item[0])
+    else:
+      error("invalid stmt: " & repr item[0])
+  let cshader = newCall(bindSym "make", shader)
+  let clayout = newCall(bindSym "layout", shader)
+  for buf in vertex_buffers: clayout.add buf.getType()[2]
+  let cpipeline = nnkObjConstr.newTree(bindSym "PipelineDesc")
+  cpipeline.add newColonExpr(ident "shader", cshader)
+  cpipeline.add newColonExpr(ident "layout", clayout)
+  if index_buffer.kind != nnkNilLit:
+    let ibufty = index_buffer.getType
+    ibufty.expectKind nnkBracketExpr
+    ibufty[0].expectIdent "array"
+    if ibufty[2].sameType getType(uint16):
+      cpipeline.add newColonExpr(ident "index_kind", newLit idx_uint16)
+    elif ibufty[2].sameType getType(uint32):
+      cpipeline.add newColonExpr(ident "index_kind", newLit idx_uint32)
+    else:
+      error("invalid index type: " & $ibufty[2])
+  cpipeline.add newColonExpr(ident "label", newLit(shader.strVal & "-pipeline"))
+  result.add quote do:
+    `tmp`.pipeline = make(`cpipeline`)
+  result.add tmp
+  return
