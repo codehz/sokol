@@ -125,15 +125,23 @@ func attachattrs(name, vs, fs: NimNode): NimNode =
   let vsdefs = newNimNode nnkTableConstr
   let fsdefs = newNimNode nnkTableConstr
   for item in vs:
-    if item.kind == nnkCommand and item[0].strVal == "attribute":
+    if item.kind != nnkCommand: continue
+    case item[0].strVal:
+    of "attribute":
       let name = ident item[1].strVal
       let idx = item[2].intVal
       attrdefs.add newColonExpr(name, newLit idx)
-    elif item.kind == nnkCommand and item[0].strVal == "uniform":
-      vsdefs.add newColonExpr(item[2], item[1])
+    of "uniform":
+      vsdefs.add newColonExpr(item[2], newCall(ident "struct", item[1]))
+    of "image":
+      vsdefs.add newColonExpr(item[2], newCall(ident "image", item[1]))
   for item in fs:
-    if item.kind == nnkCommand and item[0].strVal == "uniform":
-      fsdefs.add newColonExpr(item[2], item[1])
+    if item.kind != nnkCommand: continue
+    case item[0].strVal:
+    of "uniform":
+      fsdefs.add newColonExpr(item[2], newCall(ident "struct", item[1]))
+    of "image":
+      fsdefs.add newColonExpr(item[2], newCall(ident "image", item[1]))
   result = nnkPragmaExpr.newTree(name, nnkPragma.newTree(newColonExpr(bindSym "attrdef", attrdefs)))
   let uniformsdef = newNimNode nnkTableConstr
   if vsdefs.len > 0: uniformsdef.add newColonExpr(ident "vs", vsdefs)
@@ -239,9 +247,10 @@ macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed{`let`|`va
         let mapping = kv[1]
         if (key == "fs" and stage == stage_fs) or (key == "vs" and stage == stage_vs):
           for it in mapping:
-            if value.getTypeInst().strVal == it[1].strVal:
-              return genAst(idx = uint32 it[0].intVal, stage, value):
-                apply_uniforms(stage, idx, value)
+            if it[1][0].strVal == "struct":
+              if value.getTypeInst().strVal == it[1][1].strVal:
+                return genAst(idx = uint32 it[0].intVal, stage, value):
+                  apply_uniforms(stage, idx, value)
           error("target uniform not found")
       error("the shader stage don't have any uniforms")
   error("invalid shader desc")
