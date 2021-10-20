@@ -57,8 +57,8 @@ type
     ios_keyboard_resizes_canvas*: bool
   IconDesc* = object
     default*: bool
-    images*: array[MAX_ICONIMAGES, ImageDesc]
-  ImageDesc* = object
+    images*: array[MAX_ICONIMAGES, AppImageDesc]
+  AppImageDesc* = object
     width*, height*: uint32
     pixels*: RangePtr
   Event* = object
