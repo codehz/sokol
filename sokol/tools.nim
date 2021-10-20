@@ -226,7 +226,7 @@ macro loadshader*(contents: static string) =
       definestr
     )
 
-macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed) =
+macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed{`let`|`var`}) =
   let maypragma = getImpl(desc)[0]
   maypragma.expectKind nnkPragmaExpr
   let pragmas = maypragma[1]
