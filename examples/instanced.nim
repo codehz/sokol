@@ -1,4 +1,4 @@
-import sokol/[app, gfx, glue, tools]
+import sokol/[app, gfx, glue, tools, utils]
 import chroma, vmath
 import cascade
 
@@ -29,24 +29,21 @@ let offsets = [
 ]
 const layout = triangle.layout(Vertex, Instance)
 
-var bufferdesc = BufferDesc(data: vertices, label: "instanced-vertices")
-var instancedesc = BufferDesc(data: offsets, label: "instanced-instance")
-var bindings: Bindings
-var pipeline: Pipeline
+delayinit bindings, Bindings:
+  bindings.vertex_buffers[0] = gfx.make BufferDesc(data: vertices, label: "instanced-vertices")
+  bindings.vertex_buffers[1] = gfx.make BufferDesc(data: offsets, label: "instanced-instance")
+delayinit pipeline: gfx.make PipelineDesc(
+  shader: gfx.make triangle,
+  layout: layout,
+  label: "instanced-pipeline"
+)
 var passAction: PassAction
 passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 let app_desc = cascade AppDesc():
   init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
-    bindings.vertex_buffers[0] = gfx.make bufferdesc
-    bindings.vertex_buffers[1] = gfx.make instancedesc
-    let shd = gfx.make triangle
-    pipeline = gfx.make PipelineDesc(
-      shader: shd,
-      layout: layout,
-      label: "instanced-pipeline"
-    )
+    doinit()
   frame = proc {.cdecl.} =
     default_pass passAction, width(), height():
       pipeline.apply

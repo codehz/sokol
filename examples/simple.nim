@@ -1,4 +1,4 @@
-import sokol/[app, gfx, glue, tools]
+import sokol/[app, gfx, glue, tools, utils]
 import chroma, vmath
 import cascade
 
@@ -17,21 +17,20 @@ let vertices = [
 const layout = triangle.layout Vertex
 
 var bufferdesc = BufferDesc(data: vertices, label: "triangle-vertices")
-var bindings: Bindings
-var pipeline: Pipeline
+delayinit bindings, Bindings:
+  bindings.vertex_buffers[0] = gfx.make bufferdesc
+delayinit pipeline: gfx.make PipelineDesc(
+  shader: gfx.make triangle,
+  layout: layout,
+  label: "triangle-pipeline"
+)
 var passAction: PassAction
 passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 let app_desc = cascade AppDesc():
   init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
-    bindings.vertex_buffers[0] = gfx.make bufferdesc
-    let shd = gfx.make triangle
-    pipeline = gfx.make PipelineDesc(
-      shader: shd,
-      layout: layout,
-      label: "triangle-pipeline"
-    )
+    doinit()
   frame = proc {.cdecl.} =
     default_pass passAction, width(), height():
       pipeline.apply
