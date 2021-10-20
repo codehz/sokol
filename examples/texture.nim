@@ -1,5 +1,6 @@
 import sokol/[app, gfx, glue, tools]
 import chroma, vmath
+import cascade
 
 importshader "texture.glsl"
 
@@ -31,8 +32,8 @@ for c in imgrawdata.mitems():
   c[0] = 255
   c[3] = 255
 
-define_app:
-  init:
+let app_desc = cascade AppDesc():
+  init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
     img = gfx.make ImageDesc(
       width: 100,
@@ -50,13 +51,15 @@ define_app:
       index_kind: idx_uint16,
       label: "texture-pipeline"
     )
-  frame:
+  frame = proc {.cdecl.} =
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
       gfx.draw(whole indices)
     gfx.commit()
-  cleanup:
+  cleanup = proc {.cdecl.} =
     gfx.shutdown()
-  app_desc.high_dpi = true
-  app_desc.window_title = "texture"
+  high_dpi = true
+  window_title = "texture"
+
+quit app_desc.start()

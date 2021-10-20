@@ -1,5 +1,6 @@
 import sokol/[app, gfx, glue, tools]
 import chroma, vmath
+import cascade
 
 importshader "instanced.glsl"
 
@@ -35,8 +36,8 @@ var pipeline: Pipeline
 var passAction: PassAction
 passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
-define_app:
-  init:
+let app_desc = cascade AppDesc():
+  init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
     bindings.vertex_buffers[0] = gfx.make bufferdesc
     bindings.vertex_buffers[1] = gfx.make instancedesc
@@ -46,13 +47,15 @@ define_app:
       layout: layout,
       label: "instanced-pipeline"
     )
-  frame:
+  frame = proc {.cdecl.} =
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
       gfx.draw(whole vertices, offsets.len)
     gfx.commit()
-  cleanup:
+  cleanup = proc {.cdecl.} =
     gfx.shutdown()
-  app_desc.high_dpi = true
-  app_desc.window_title = "instanced"
+  high_dpi = true
+  window_title = "instanced"
+
+quit app_desc.start()

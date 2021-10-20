@@ -1,5 +1,6 @@
 import sokol/[app, gfx, glue, tools]
 import chroma, vmath
+import cascade
 
 type ColorInput {.packed.} = object
   color {.align: 16.}: Color
@@ -24,8 +25,8 @@ var pipeline: Pipeline
 var passAction: PassAction
 passAction.colors[0] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
-define_app:
-  init:
+let app_desc = cascade AppDesc():
+  init = proc {.cdecl.} =
     gfx.setup Desc(context: gfx_context())
     bindings.vertex_buffers[0] = gfx.make bufferdesc
     let shd = gfx.make uniform_demo
@@ -34,14 +35,16 @@ define_app:
       layout: layout,
       label: "uniform-pipeline"
     )
-  frame:
+  frame = proc {.cdecl.} =
     default_pass passAction, width(), height():
       pipeline.apply
       bindings.apply
       uniform_demo[stage_fs] = p
       gfx.draw(0..3)
     gfx.commit()
-  cleanup:
+  cleanup = proc {.cdecl.} =
     gfx.shutdown()
-  app_desc.high_dpi = true
-  app_desc.window_title = "uniform"
+  high_dpi = true
+  window_title = "uniform"
+
+quit app_desc.start()
