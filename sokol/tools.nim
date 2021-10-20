@@ -34,7 +34,8 @@ elif sokol_backend == "WGPU":
 else:
   {.error: "Cannot detect shader language".}
 
-template attrdef(tab: untyped) {.pragma.}
+template attributes(tab: untyped) {.pragma.}
+template outputs(tab: untyped) {.pragma.}
 template uniforms(tab: untyped) {.pragma.}
 
 template instance*() {.pragma.}
@@ -121,7 +122,8 @@ func decodeShaderStageDesc(node: NimNode, src: ShaderSource, structs: var Table[
   newBlockStmt(stmt)
 
 func attachattrs(name, vs, fs: NimNode): NimNode =
-  let attrdefs = newNimNode nnkTableConstr
+  let attrs = newNimNode nnkTableConstr
+  let outputs = newNimNode nnkTableConstr
   let vsdefs = newNimNode nnkTableConstr
   let fsdefs = newNimNode nnkTableConstr
   for item in vs:
@@ -130,7 +132,7 @@ func attachattrs(name, vs, fs: NimNode): NimNode =
     of "attribute":
       let name = ident item[1].strVal
       let idx = item[2].intVal
-      attrdefs.add newColonExpr(name, newLit idx)
+      attrs.add newColonExpr(name, newLit idx)
     of "uniform":
       vsdefs.add newColonExpr(item[2], newCall(ident "struct", item[1]))
     of "image":
@@ -142,7 +144,17 @@ func attachattrs(name, vs, fs: NimNode): NimNode =
       fsdefs.add newColonExpr(item[2], newCall(ident "struct", item[1]))
     of "image":
       fsdefs.add newColonExpr(item[2], newCall(ident "image", item[1]))
-  result = nnkPragmaExpr.newTree(name, nnkPragma.newTree(newColonExpr(bindSym "attrdef", attrdefs)))
+    of "output":
+      let name = ident item[1].strVal
+      let idx = item[2].intVal
+      outputs.add newColonExpr(name, newLit idx)
+  result = nnkPragmaExpr.newTree(
+    name,
+    nnkPragma.newTree(
+      newColonExpr(bindSym "attributes", attrs),
+      newColonExpr(bindSym "outputs", outputs)
+    )
+  )
   let uniformsdef = newNimNode nnkTableConstr
   if vsdefs.len > 0: uniformsdef.add newColonExpr(ident "vs", vsdefs)
   if fsdefs.len > 0: uniformsdef.add newColonExpr(ident "fs", fsdefs)
@@ -331,7 +343,7 @@ macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
   defs.expectKind nnkIdentDefs
   defs[0][1].expectKind nnkPragma
   for p in defs[0][1]:
-    if (p.kind == nnkCall or p.kind == nnkExprColonExpr) and p[0].strVal == "attrdef":
+    if (p.kind == nnkCall or p.kind == nnkExprColonExpr) and p[0].strVal == "attributes":
       p[1].expectKind nnkTableConstr
       for kv in p[1]:
         attrsmap[kv[0].strVal] = int kv[1].intVal

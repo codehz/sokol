@@ -21,7 +21,7 @@ task download, "Download sokol shdc":
     const filename = "linux/sokol-shdc"
   else:
     echo "not support yet"
-  const HASH = "QmTtmWPhqTB2RWMjqhavLpTJJVbmbiQY2yEfw9MtMf6mbZ"
+  const HASH = "QmRUNL9Z7qmNiHUVevFK8oH3hcWiSN1oLGfkK8xp5AyjF6"
   exec "curl -Lo " & toExe("tools/sokol-shdc") & " https://ipfs.io/ipfs/" & HASH & "/"  & filename
   when not defined(windows):
     exec "chmod +x tools/sokol-shdc"
