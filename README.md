@@ -4,7 +4,7 @@ Sokol wrapper for nim
 example code:
 ```nim
 import sokol/[app, gfx, glue, tools, utils]
-import chroma, vmath
+import chroma, vmath, cascade
 
 # compile shader on the fly!
 importshader "instanced.glsl" # see examples folder
