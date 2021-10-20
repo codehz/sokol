@@ -323,7 +323,7 @@ func mapFormat(node: NimNode, normal: bool): VertexFormat =
       else:
         return vf_invalid
 
-macro layout*(it: typed, bufs: varargs[typed]): LayoutDesc =
+macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
   var attrsmap: Table[string, int]
   var buffers: seq[BufferLayoutDesc]
   var attrs: Table[int, tuple[buffer: int, offset: int, format: VertexFormat]]
