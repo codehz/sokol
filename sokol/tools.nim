@@ -240,7 +240,7 @@ macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed) =
         if (key == "fs" and stage == stage_fs) or (key == "vs" and stage == stage_vs):
           for it in mapping:
             if value.getTypeInst().strVal == it[1].strVal:
-              return genAst(idx = uint32 it[0].intVal, stage = stage, value):
+              return genAst(idx = uint32 it[0].intVal, stage, value):
                 apply_uniforms(stage, idx, value)
           error("target uniform not found")
       error("the shader stage don't have any uniforms")
@@ -249,14 +249,12 @@ macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed) =
 macro compileshader*(content: static string) =
   let (output, code) = gorgeEx(shdcExec & " -i @ -l " & slang & " -o @ -f nim -b", content, "OwO")
   doAssert code == 0, "Failed to compile shader: " & output & " code: " & $code
-  quote do:
-    loadshader `output`
+  genAst(output): loadshader output
 
 macro importshader*(filename: typed{nkStrLit}) =
   let path = filename.lineInfoObj.filename.joinPath("..", filename.strVal)
   let content = staticRead path
-  quote do:
-    compileshader `content`
+  genAst(content): compileshader content
 
 func mapFormat(node: NimNode, normal: bool): VertexFormat =
   if node.kind == nnkSym:
@@ -367,7 +365,7 @@ macro layout*(it: typed, bufs: varargs[typed]): LayoutDesc =
       attrs[idx] = (buffer: bufid, offset: sym.getOffset, format: mapFormat(deftype, normal))
   let stmt = newNimNode nnkStmtList
   let retsym = nskVar.genSym "ret"
-  stmt.add quote do: # nnkVarSection.newTree nnkIdentDefs.newTree(retsym, bindSym "LayoutDesc", newEmptyNode())
+  stmt.add quote do:
     var `retsym`: LayoutDesc
   for i, info in buffers:
     let stride = newLit info.stride
