@@ -241,8 +241,11 @@ type
     action_load
     action_dontcare
   ColorAttachmentAction* = object
-    action*: Action
-    color*: Color
+    case action*: Action:
+    of action_clear:
+      color*: Color
+    else:
+      discard
   DepthAttachmentAction* = object
     action*: Action
     value*: float32
