@@ -16,8 +16,8 @@ let vertices = [
 ]
 
 delayinit state: simple.build(vertices):
-  vertex_buffers = [vertices]
-  colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
+  vertex_buffers            = [vertices]
+  action.colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 let app_desc = cascade AppDesc():
   init = proc {.cdecl.} =

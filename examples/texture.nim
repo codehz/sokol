@@ -31,10 +31,10 @@ let imgdesc = ImageDesc(
 )
 
 delayinit state: textured.build(vertices, indices, imgdesc):
-  vertex_buffers     = [vertices]
-  index_buffer       = indices
-  fs_images[tex]     = imgdesc
-  colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
+  vertex_buffers            = [vertices]
+  index_buffer              = indices
+  fs_images[tex]            = imgdesc
+  action.colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 let app_desc = cascade AppDesc():
   init = proc {.cdecl.} =

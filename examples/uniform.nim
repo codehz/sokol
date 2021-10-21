@@ -19,8 +19,8 @@ let vertices = [
 var p = ColorInput(color: color(1, 0, 0))
 
 delayinit state: uniform_demo.build(vertices):
-  vertex_buffers = [vertices]
-  colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
+  vertex_buffers            = [vertices]
+  action.colors[frag_color] = ColorAttachmentAction(action: action_clear, color: color(1, 1, 1))
 
 let app_desc = cascade AppDesc():
   init = proc {.cdecl.} =

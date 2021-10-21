@@ -102,19 +102,20 @@ func decodeShaderStageDesc(node: NimNode, src: ShaderSource, structs: var Table[
       stmt.add quote do:
         `s`.uniform_blocks[`idx`].size = `size`
       when sokol_backend.startsWith "GL":
-        let namelit = newLit name
-        let xsize = uint32(size div 16)
+        let namelit = newLit name.strVal
+        let xsize   = uint32(size div 16)
         stmt.add quote do:
-          `s`.uniform_blocks[`idx`].uniforms[0].name = `namelit`
-          `s`.uniform_blocks[`idx`].uniforms[0].kind = u_float4
+          `s`.uniform_blocks[`idx`].uniforms[0].name  = `namelit`
+          `s`.uniform_blocks[`idx`].uniforms[0].kind  = u_float4
           `s`.uniform_blocks[`idx`].uniforms[0].count = `xsize`
-    of (image(`name`, `idx`)):
-        let image_kind = nnkCast.newTree(bindSym "ImageKind", newLit int32 item[3].intVal)
-        let sampler_kind = nnkCast.newTree(bindSym "SamplerKind", newLit int32 item[4].intVal)
-        stmt.add quote do:
-          `s`.images[`idx`].name = `name`
-          `s`.images[`idx`].image_kind = `image_kind`
-          `s`.images[`idx`].sampler_kind = `sampler_kind`
+    of (image(`id_name`, `idx`, `raw_image_kind`, `raw_sampler_kind`)):
+      let name = newLit id_name.strVal
+      let image_kind   = nnkCast.newTree(bindSym "ImageKind", newLit int32 raw_image_kind.intVal)
+      let sampler_kind = nnkCast.newTree(bindSym "SamplerKind", newLit int32 raw_sampler_kind.intVal)
+      stmt.add quote do:
+        `s`.images[`idx`].name         = `name`
+        `s`.images[`idx`].image_kind   = `image_kind`
+        `s`.images[`idx`].sampler_kind = `sampler_kind`
   stmt.add s
   newBlockStmt(stmt)
 
@@ -130,7 +131,7 @@ func attachattrs(name, vs, fs: NimNode): NimNode =
       attrs.add newColonExpr(name, idx)
     of (uniform(`name`, `idx`)):
       vsdefs.add newColonExpr(idx, newCall(ident "struct", name))
-    of (image(`name`, `idx`)):
+    of (image(`name`, `idx`, `_`, `_`)):
       vsdefs.add newColonExpr(idx, newCall(ident "image", name))
   for item in fs:
     case item:
@@ -138,7 +139,7 @@ func attachattrs(name, vs, fs: NimNode): NimNode =
       outputs.add newColonExpr(name, idx)
     of (uniform(`name`, `idx`)):
       fsdefs.add newColonExpr(idx, newCall(ident "struct", name))
-    of (image(`name`, `idx`)):
+    of (image(`name`, `idx`, `_`, `_`)):
       fsdefs.add newColonExpr(idx, newCall(ident "image", name))
   result = nnkPragmaExpr.newTree(
     name,
@@ -421,7 +422,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
         timg = newCall(bindSym "make", val)
       result.add quote do:
         `tmp`.bindings.vs_images[`imgidx`] = `timg`
-    of (colors[`oid`] = `value*`):
+    of (action.colors[`oid`] = `value*`):
       let colidx = outputs.popped(oid.strVal)
       result.add quote do:
         `tmp`.action.colors[`colidx`] = `value`

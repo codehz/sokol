@@ -1,6 +1,6 @@
 {.experimental: "caseStmtMacros".}
 
-import std/[macros, tables]
+import std/[macros, tables, strutils]
 
 func equalNode(a, b: NimNode): NimNode =
   nnkInfix.newTree(bindSym "==", a, b)
@@ -39,11 +39,13 @@ func match(this, expr: NimNode, cache: var Table[string, NimNode]): NimNode =
   case expr.kind:
   of nnkAccQuoted:
     if expr.len == 1:
-      cache[expr[0].strVal] = this
       result = genInSet(this, "simplenode")
+      if not expr[0].strVal.startsWith "_":
+        cache[expr[0].strVal] = this
     elif expr.len == 2:
       expr[1].expectIdent "*"
-      cache[expr[0].strVal] = this
+      if not expr[0].strVal.startsWith "_":
+        cache[expr[0].strVal] = this
     else:
       error("invalid quote: " & repr expr)
   of identlists:
