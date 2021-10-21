@@ -76,12 +76,13 @@ macro `case`*(stmt: NimNode): untyped =
   let expr = stmt[0]
   let branches = stmt[1..^1]
   for branch in branches:
-    if branch.len == 2:
-      let body = branch[1]
+    if branch.len >= 2:
+      let body = branch[^1]
       var cache: Table[string, NimNode]
       var generated = newLit false
-      for cond in branch[0]:
-        generated.or = match(expr, cond, cache)
+      for conds in branch[0..^2]:
+        conds.expectLen 1
+        generated.or = match(expr, conds[0], cache)
       let ifbranch = nnkElifBranch.newTree(generated, newStmtList())
       for k, v in cache:
         ifbranch[1].add newLetStmt(ident k, v)

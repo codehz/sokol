@@ -202,7 +202,7 @@ macro loadshader*(contents: static string) =
     of (program(`name`, `body*`)):
       discard (name, body)
       programs.add stmt
-    of (source(`name`, `kind`, `body*`), bytecode(`name`, `kind`, `body*`)):
+    of (source(`name`, `kind`, `body*`)), (bytecode(`name`, `kind`, `body*`)):
       if acceptKind(kind.strVal):
         let sym = nskVar.genSym name.strVal
         sources[name.strVal] = ShaderSource(sym: sym, binary: stmt[0].strVal == "bytecode", kind: kind.strVal)
