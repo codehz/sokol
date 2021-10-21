@@ -282,7 +282,7 @@ proc set_clipboard_string*(str: cstring)
 proc get_clipboard_string*: cstring
 
 proc set_window_title*(title: cstring)
-proc set_icon*(icon: ConstVIew[IconDesc])
+proc set_icon*(icon: ConstView[IconDesc]) {.fixConstView.}
 
 proc get_num_dropped_files*: uint32
 proc get_dropped_file_path*(index: uint32): cstring

@@ -512,4 +512,5 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   result.add quote do:
     `tmp`.pipeline = make(`cpipeline`)
   result.add tmp
+  # echo repr result
   return
