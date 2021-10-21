@@ -372,6 +372,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   var outputs: Table[string, int]
   var vs, fs: Table[string, int]
   let st: NimNode = shader.getImpl[0][1]
+  let deferred = newStmtList()
   for kv in st:
     case kv:
     of (outputs: `list*`):
@@ -390,19 +391,19 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
             vs[col[1][1].strVal] = int col[0].intVal
   for item in body:
     case item:
-    of (vertex_buffers = `list*`):
+    of (vertex_buffers = `list*`), (bindings.vertex_buffers = `list*`):
       for i, item in list.pairs:
         let vitem = dict.popped(item.strVal)
         vertex_buffers.add vitem
         let label = newLit(shader.strVal & "-" & item.strVal)
-        result.add quote do:
+        deferred.add quote do:
           `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(data: `vitem`, label: `label`)
-    of (index_buffer = `list`):
+    of (index_buffer = `list`), (bindings.index_buffer = `list`):
       index_buffer = dict.popped(list.strVal)
       let label = newLit(shader.strVal & "-indices")
-      result.add quote do:
+      deferred.add quote do:
         `tmp`.bindings.index_buffer = make BufferDesc(data: `index_buffer`, kind: bk_index, label: `label`)
-    of (fs_images[`texid`] = `imgdesc`):
+    of (fs_images[`texid`] = `imgdesc`), (bindings.fs_images[`texid`] = `imgdesc`):
       let imgidx = fs.popped(texid.strVal)
       let val = dict.popped(imgdesc.strVal)
       var timg: NimNode
@@ -410,9 +411,9 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
         timg = val
       elif val.getTypeInst.sameType getType(ImageDesc):
         timg = newCall(bindSym "make", val)
-      result.add quote do:
+      deferred.add quote do:
         `tmp`.bindings.fs_images[`imgidx`] = `timg`
-    of (vs_images[`texid`] = `imgdesc`):
+    of (vs_images[`texid`] = `imgdesc`), (bindings.vs_images[`texid`] = `imgdesc`):
       let imgidx = vs.popped(texid.strVal)
       let val = dict.popped(imgdesc.strVal)
       var timg: NimNode
@@ -420,12 +421,18 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
         timg = val
       elif val.getTypeInst.sameType getType(ImageDesc):
         timg = newCall(bindSym "make", val)
-      result.add quote do:
+      deferred.add quote do:
         `tmp`.bindings.vs_images[`imgidx`] = `timg`
     of (action.colors[`oid`] = `value*`):
-      let colidx = outputs.popped(oid.strVal)
-      result.add quote do:
+      let colidx = outputs[oid.strVal]
+      deferred.add quote do:
         `tmp`.action.colors[`colidx`] = `value`
+    of (pipeline.colors[`oid`] = `value*`):
+      let colidx = outputs[oid.strVal]
+      deferred.add quote do:
+        `tmp`.pipeline.colors[`colidx`] = `value`
+    else:
+      deferred.add fix(tmp, item)
   let cshader = newCall(bindSym "make", shader)
   let clayout = newCall(bindSym "layout", shader)
   for buf in vertex_buffers: clayout.add buf.getType()[2]
@@ -445,6 +452,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   cpipeline.add newColonExpr(ident "label", newLit(shader.strVal & "-pipeline"))
   result.add quote do:
     `tmp`.pipeline = make(`cpipeline`)
+  result.add deferred
   result.add tmp
-  # echo repr result
+  echo treerepr result
   return

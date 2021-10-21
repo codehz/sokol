@@ -347,21 +347,27 @@ type
     compare*: CompareFunc
     fail_op*, depth_fail_op*, pass_op*: StencilOp
   StencilState* = object
-    enabled*: bool
-    front*, back*: StencilFaceState
-    read_mask*, write_mask*: uint8
-    refc*: uint8
+    case enabled*: bool
+    of true:
+      front*, back*: StencilFaceState
+      read_mask*, write_mask*: uint8
+      refc*: uint8
+    else:
+      discard
   DepthState* = object
     pixel_format*: PixelFormat
     compare*: CompareFunc
     write_enabled*: bool
     bias*, bias_slope_scale*, bias_clamp*: float32
   BlendState* = object
-    enabled*: bool
-    src_factor_rgb*, dst_factor_rgb*: BlendFactor
-    op_rgb*: BlendOp
-    src_factor_alpha*, dst_factor_alpha*: BlendFactor
-    op_alpha*: BlendOp
+    case enabled*: bool
+    of true:
+      src_factor_rgb*, dst_factor_rgb*: BlendFactor
+      op_rgb*: BlendOp
+      src_factor_alpha*, dst_factor_alpha*: BlendFactor
+      op_alpha*: BlendOp
+    else:
+      discard
   ColorState* = object
     pixel_format*: PixelFormat
     write_mask*: ColorMaskInternal
