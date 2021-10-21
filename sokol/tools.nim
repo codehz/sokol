@@ -353,11 +353,11 @@ macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
 func popped[K, V](tab: var Table[K, V], key: K): V =
   doAssert tab.pop(key, result), $key & " not found or used already"
 
-func fix(self: NimNode, expr: NimNode): NimNode =
+func fix(expr: NimNode, replacements: Table[string, NimNode]): NimNode =
   if expr.kind == nnkIdent:
-    newDotExpr(self, expr)
+    copy replacements[expr.strVal]
   else:
-    expr[0] = fix(self, expr[0])
+    expr[0] = fix(expr[0], replacements)
     expr
 
 macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, body: untyped{nkStmtList}): PassState =
@@ -372,7 +372,9 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   var outputs: Table[string, int]
   var vs, fs: Table[string, int]
   let st: NimNode = shader.getImpl[0][1]
-  let deferred = newStmtList()
+  let cpipeline = nnkObjConstr.newTree(bindSym "PipelineDesc")
+  let tpipeline = nskVar.genSym "pipeline_desc"
+  result.add newVarStmt(tpipeline, cpipeline)
   for kv in st:
     case kv:
     of (outputs: `list*`):
@@ -396,12 +398,12 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
         let vitem = dict.popped(item.strVal)
         vertex_buffers.add vitem
         let label = newLit(shader.strVal & "-" & item.strVal)
-        deferred.add quote do:
+        result.add quote do:
           `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(data: `vitem`, label: `label`)
     of (index_buffer = `list`), (bindings.index_buffer = `list`):
       index_buffer = dict.popped(list.strVal)
       let label = newLit(shader.strVal & "-indices")
-      deferred.add quote do:
+      result.add quote do:
         `tmp`.bindings.index_buffer = make BufferDesc(data: `index_buffer`, kind: bk_index, label: `label`)
     of (fs_images[`texid`] = `imgdesc`), (bindings.fs_images[`texid`] = `imgdesc`):
       let imgidx = fs.popped(texid.strVal)
@@ -411,7 +413,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
         timg = val
       elif val.getTypeInst.sameType getType(ImageDesc):
         timg = newCall(bindSym "make", val)
-      deferred.add quote do:
+      result.add quote do:
         `tmp`.bindings.fs_images[`imgidx`] = `timg`
     of (vs_images[`texid`] = `imgdesc`), (bindings.vs_images[`texid`] = `imgdesc`):
       let imgidx = vs.popped(texid.strVal)
@@ -421,22 +423,27 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
         timg = val
       elif val.getTypeInst.sameType getType(ImageDesc):
         timg = newCall(bindSym "make", val)
-      deferred.add quote do:
+      result.add quote do:
         `tmp`.bindings.vs_images[`imgidx`] = `timg`
     of (action.colors[`oid`] = `value*`):
       let colidx = outputs[oid.strVal]
-      deferred.add quote do:
+      result.add quote do:
         `tmp`.action.colors[`colidx`] = `value`
     of (pipeline.colors[`oid`] = `value*`):
       let colidx = outputs[oid.strVal]
-      deferred.add quote do:
-        `tmp`.pipeline.colors[`colidx`] = `value`
+      result.add quote do:
+        `tpipeline`.colors[`colidx`] = `value`
+    of (`_*` = `_*`):
+      result.add: fix(item): toTable {
+        "pipeline": tpipeline,
+        "action": newDotExpr(tmp, ident "action"),
+        "bindings": newDotExpr(tmp, ident "bindings")
+      }
     else:
-      deferred.add fix(tmp, item)
+      error("invalid stmt: " & repr item)
   let cshader = newCall(bindSym "make", shader)
   let clayout = newCall(bindSym "layout", shader)
   for buf in vertex_buffers: clayout.add buf.getType()[2]
-  let cpipeline = nnkObjConstr.newTree(bindSym "PipelineDesc")
   cpipeline.add newColonExpr(ident "shader", cshader)
   cpipeline.add newColonExpr(ident "layout", clayout)
   if index_buffer.kind != nnkNilLit:
@@ -451,8 +458,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
       error("invalid index type: " & $ibufty[2])
   cpipeline.add newColonExpr(ident "label", newLit(shader.strVal & "-pipeline"))
   result.add quote do:
-    `tmp`.pipeline = make(`cpipeline`)
-  result.add deferred
+    `tmp`.pipeline = make(`tpipeline`)
   result.add tmp
-  echo treerepr result
+  # echo treerepr result
   return
