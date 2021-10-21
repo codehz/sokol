@@ -1,5 +1,7 @@
+{.experimental: "caseStmtMacros".}
+
 import std/[macros, options, strutils, tables, os, genasts, sugar]
-import ./private/backend
+import ./private/[backend, astpat]
 import ./gfx
 import ./common
 
@@ -94,24 +96,19 @@ func decodeShaderStageDesc(node: NimNode, src: ShaderSource, structs: var Table[
     let ver = if src.kind == "hlsl5": "5_0" else: "4_0"
     base.add newColonExpr(ident "d3d11_target", newLit prefix & ver)
   for item in node[3]:
-    if item.kind == nnkCommand:
-      case item[0].strVal:
-      of "uniform":
-        let name = item[1].strVal
-        let idx = item[2].intVal
-        let size = structs[name]
+    case item:
+    of (uniform(`name`, `idx`)):
+      let size = structs[name.strVal]
+      stmt.add quote do:
+        `s`.uniform_blocks[`idx`].size = `size`
+      when sokol_backend.startsWith "GL":
+        let namelit = newLit name
+        let xsize = uint32(size div 16)
         stmt.add quote do:
-          `s`.uniform_blocks[`idx`].size = `size`
-        when sokol_backend.startsWith "GL":
-          let namelit = newLit name
-          let xsize = uint32(size div 16)
-          stmt.add quote do:
-            `s`.uniform_blocks[`idx`].uniforms[0].name = `namelit`
-            `s`.uniform_blocks[`idx`].uniforms[0].kind = u_float4
-            `s`.uniform_blocks[`idx`].uniforms[0].count = `xsize`
-      of "image":
-        let name = item[1].strVal
-        let idx = item[2].intVal
+          `s`.uniform_blocks[`idx`].uniforms[0].name = `namelit`
+          `s`.uniform_blocks[`idx`].uniforms[0].kind = u_float4
+          `s`.uniform_blocks[`idx`].uniforms[0].count = `xsize`
+    of (image(`name`, `idx`)):
         let image_kind = nnkCast.newTree(bindSym "ImageKind", newLit int32 item[3].intVal)
         let sampler_kind = nnkCast.newTree(bindSym "SamplerKind", newLit int32 item[4].intVal)
         stmt.add quote do:
@@ -127,27 +124,22 @@ func attachattrs(name, vs, fs: NimNode): NimNode =
   let vsdefs = newNimNode nnkTableConstr
   let fsdefs = newNimNode nnkTableConstr
   for item in vs:
-    if item.kind != nnkCommand: continue
-    case item[0].strVal:
-    of "attribute":
-      let name = ident item[1].strVal
-      let idx = item[2].intVal
-      attrs.add newColonExpr(name, newLit idx)
-    of "uniform":
-      vsdefs.add newColonExpr(item[2], newCall(ident "struct", item[1]))
-    of "image":
-      vsdefs.add newColonExpr(item[2], newCall(ident "image", item[1]))
+    case item:
+    of (attribute(`name`, `idx`, `sem_name`, `sem_index`)):
+      discard (sem_name, sem_index)
+      attrs.add newColonExpr(name, idx)
+    of (uniform(`name`, `idx`)):
+      vsdefs.add newColonExpr(idx, newCall(ident "struct", name))
+    of (image(`name`, `idx`)):
+      vsdefs.add newColonExpr(idx, newCall(ident "image", name))
   for item in fs:
-    if item.kind != nnkCommand: continue
-    case item[0].strVal:
-    of "uniform":
-      fsdefs.add newColonExpr(item[2], newCall(ident "struct", item[1]))
-    of "image":
-      fsdefs.add newColonExpr(item[2], newCall(ident "image", item[1]))
-    of "output":
-      let name = ident item[1].strVal
-      let idx = item[2].intVal
-      outputs.add newColonExpr(name, newLit idx)
+    case item:
+    of (output(`name`, `idx`)):
+      outputs.add newColonExpr(name, idx)
+    of (uniform(`name`, `idx`)):
+      fsdefs.add newColonExpr(idx, newCall(ident "struct", name))
+    of (image(`name`, `idx`)):
+      fsdefs.add newColonExpr(idx, newCall(ident "image", name))
   result = nnkPragmaExpr.newTree(
     name,
     nnkPragma.newTree(
@@ -175,17 +167,12 @@ macro loadshader*(contents: static string) =
   result.add programsec
   let stmts = parseStmt(contents)
   for stmt in stmts:
-    assert stmt.kind == nnkCommand
-    let command = stmt[0].strVal
-    case command:
-    of "metadata":
-      assert stmt[1].intVal == 1
-    of "version":
-      discard
-    of "struct":
-      let name = stmt[1]
-      let size = stmt[2].intVal
-      let body = stmt[3]
+    case stmt:
+    of (metadata `val`):
+      assert val.intVal == 1
+    of (version `ver`):
+      discard ver
+    of (struct(`name`, `size`, `body*`)):
       let objfields = nnkRecList.newNimNode()
       let obj = nnkObjectTy.newTree(newEmptyNode(), newEmptyNode(), objfields)
       for field in body:
@@ -210,23 +197,21 @@ macro loadshader*(contents: static string) =
           `typedef`
       staticsec.add quote do:
         assert sizeof(`name`) == `size`, "struct size mismatched, please check custom type"
-      structs[name.strVal] = int size
-    of "program":
+      structs[name.strVal] = int size.intVal
+    of (program(`name`, `body*`)):
+      discard (name, body)
       programs.add stmt
-    of "source", "bytecode":
-      let name = stmt[1].strVal
-      let kind = stmt[2].strVal
-      let body = stmt[3]
-      if acceptKind(kind):
-        let sym = nskVar.genSym name
-        sources[name] = ShaderSource(sym: sym, binary: command == "bytecode", kind: kind)
+    of (source(`name`, `kind`, `body*`), bytecode(`name`, `kind`, `body*`)):
+      if acceptKind(kind.strVal):
+        let sym = nskVar.genSym name.strVal
+        sources[name.strVal] = ShaderSource(sym: sym, binary: stmt[0].strVal == "bytecode", kind: kind.strVal)
         var code: string
         for line in body:
           assert line[0].strVal == "put"
           code.add parseHexStr line[1].strVal
         varsec.add newIdentDefs(sym, newEmptyNode(), newLit code)
     else:
-      echo command
+      warning("invalid command: " & stmt[0].strVal)
   for program in programs:
     let name = program[1]
     let body = program[2]
@@ -251,19 +236,20 @@ macro `[]=`*(desc: ShaderDesc, stage: static ShaderStage, value: typed{`let`|`va
   maypragma.expectKind nnkPragmaExpr
   let pragmas = maypragma[1]
   for pragma in pragmas:
-    if pragma.kind in { nnkCommand, nnkExprColonExpr } and pragma[0].strVal == "uniforms":
-      let uniforms = pragma[1]
+    case pragma:
+    of (uniforms: `uniforms*`):
       for kv in uniforms:
-        kv.expectKind nnkExprColonExpr
-        let key = kv[0].strVal
-        let mapping = kv[1]
-        if (key == "fs" and stage == stage_fs) or (key == "vs" and stage == stage_vs):
-          for it in mapping:
-            if it[1][0].strVal == "struct":
-              if value.getTypeInst().strVal == it[1][1].strVal:
-                return genAst(idx = uint32 it[0].intVal, stage, value):
-                  apply_uniforms(stage, idx, value)
-          error("target uniform not found")
+        case kv:
+        of (`keyid`: `mapping*`):
+          let key = keyid.strVal
+          if (key == "fs" and stage == stage_fs) or (key == "vs" and stage == stage_vs):
+            for it in mapping:
+              case it:
+              of (`idx`: struct(`name`)):
+                if value.getTypeInst().strVal == name.strVal:
+                  return genAst(idx = uint32 idx.intVal, stage, value):
+                    apply_uniforms(stage, idx, value)
+            error("target uniform not found")
       error("the shader stage don't have any uniforms")
   error("invalid shader desc")
 
@@ -278,62 +264,20 @@ macro importshader*(filename: typed{nkStrLit}) =
   genAst(content): compileshader content
 
 func mapFormat(node: NimNode, normal: bool): VertexFormat =
-  if node.kind == nnkSym:
-    node.expectIdent "float32"
-    return vf_float
-  elif node.kind == nnkBracketExpr:
-    node[0].expectIdent "array"
-    let
-      base = node[2]
-      count = node[1].intVal
-    base.expectKind nnkSym
-    case base.strVal:
-    of "float32":
-      case count:
-      of 1:
-        return vf_float
-      of 2:
-        return vf_float2
-      of 3:
-        return vf_float3
-      of 4:
-        return vf_float4
-      else:
-        return vf_invalid
-    of "int8":
-      case count:
-      of 4:
-        return if normal: vf_byte4n else: vf_byte4
-      else:
-        return vf_invalid
-    of "uint8":
-      case count:
-      of 4:
-        return if normal: vf_ubyte4n else: vf_ubyte4
-      else:
-        return vf_invalid
-    of "int16":
-      case count:
-      of 2:
-        return if normal: vf_short2n else: vf_short2
-      of 4:
-        return if normal: vf_short4n else: vf_short4
-      else:
-        return vf_invalid
-    of "uint16":
-      case count:
-      of 2:
-        return vf_ushort2n
-      of 4:
-        return vf_ushort4n
-      else:
-        return vf_invalid
-    of "uint10":
-      case count:
-      of 2:
-        return vf_uint10_n2
-      else:
-        return vf_invalid
+  case node:
+  of (float32): return vf_float
+  of (array[1, float32]): return vf_float
+  of (array[2, float32]): return vf_float2
+  of (array[3, float32]): return vf_float3
+  of (array[4, float32]): return vf_float4
+  of (array[4, int8]): return if normal: vf_byte4n else: vf_byte4
+  of (array[4, uint8]): return if normal: vf_ubyte4n else: vf_ubyte4
+  of (array[2, int16]): return if normal: vf_short2n else: vf_short2
+  of (array[4, int16]): return if normal: vf_short4n else: vf_short4
+  of (array[2, uint16]): return vf_ushort2n
+  of (array[4, uint16]): return vf_ushort4n
+  of (array[2, uint16]): return vf_uint10_n2
+  else: return vf_invalid
 
 macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
   var attrsmap: Table[string, int]
@@ -408,6 +352,13 @@ macro layout*(it: ShaderDesc, bufs: varargs[typed]): LayoutDesc =
 func popped[K, V](tab: var Table[K, V], key: K): V =
   doAssert tab.pop(key, result), $key & " not found or used already"
 
+func fix(self: NimNode, expr: NimNode): NimNode =
+  if expr.kind == nnkIdent:
+    newDotExpr(self, expr)
+  else:
+    expr[0] = fix(self, expr[0])
+    expr
+
 macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, body: untyped{nkStmtList}): PassState =
   result = newStmtList()
   let tmp = nskVar.genSym "tmp"
@@ -421,77 +372,59 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   var vs, fs: Table[string, int]
   let st: NimNode = shader.getImpl[0][1]
   for kv in st:
-    kv.expectKind nnkExprColonExpr
-    case kv[0].strVal:
-    of "outputs":
-      for col in kv[1]:
+    case kv:
+    of (outputs: `list*`):
+      for col in list:
         outputs[col[0].strVal] = int col[1].intVal
-    of "uniforms":
-      for typ in kv[1]:
-        case typ[0].strVal:
-        of "fs":
-          for col in typ[1]:
+    of (uniforms: `list*`):
+      for typ in list:
+        case typ:
+        of (fs: `tab*`):
+          for col in tab:
             if col[1][0].strVal != "image": continue
             fs[col[1][1].strVal] = int col[0].intVal
-        of "vs":
-          for col in typ[1]:
+        of (vs: `tab*`):
+          for col in tab:
             if col[1][0].strVal != "image": continue
             vs[col[1][1].strVal] = int col[0].intVal
   for item in body:
-    item.expectKind nnkAsgn
-    case item[0].kind:
-    of nnkIdent:
-      case item[0].strVal:
-      of "vertex_buffers":
-        for i, item in item[1].pairs:
-          let vitem = dict.popped(item.strVal)
-          vertex_buffers.add vitem
-          let label = newLit(shader.strVal & "-" & item.strVal)
-          result.add quote do:
-            `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(data: `vitem`, label: `label`)
-      of "index_buffer":
-        index_buffer = dict.popped(item[1].strVal)
-        let label = newLit(shader.strVal & "-indices")
+    case item:
+    of (vertex_buffers = `list*`):
+      for i, item in list.pairs:
+        let vitem = dict.popped(item.strVal)
+        vertex_buffers.add vitem
+        let label = newLit(shader.strVal & "-" & item.strVal)
         result.add quote do:
-          `tmp`.bindings.index_buffer = make BufferDesc(data: `index_buffer`, kind: bk_index, label: `label`)
-      else:
-        error("unknown params: " & item[0].strVal)
-    of nnkBracketExpr:
-      let bidx = item[0][1]
-      case item[0][0].kind:
-      of nnkIdent:
-        case item[0][0].strVal:
-        of "fs_images":
-          let imgidx = fs.popped(bidx.strVal)
-          let val = dict.popped(item[1].strVal)
-          var timg: NimNode
-          if val.getTypeInst.sameType getType(Image):
-            timg = val
-          elif val.getTypeInst.sameType getType(ImageDesc):
-            timg = newCall(bindSym "make", val)
-          result.add quote do:
-            `tmp`.bindings.fs_images[`imgidx`] = `timg`
-        of "vs_images":
-          let imgidx = vs.popped(bidx.strVal)
-          let val = dict.popped(item[1].strVal)
-          var timg: NimNode
-          if val.getTypeInst.sameType getType(Image):
-            timg = val
-          elif val.getTypeInst.sameType getType(ImageDesc):
-            timg = newCall(bindSym "make", val)
-          result.add quote do:
-            `tmp`.bindings.vs_images[`imgidx`] = `timg`
-        of "colors":
-          let colidx = outputs.popped(bidx.strVal)
-          let val = item[1]
-          result.add quote do:
-            `tmp`.action.colors[`colidx`] = `val`
-        else:
-          error("unknown attr " & item[0][0].strVal)
-      else:
-        error("invalid stmt: " & repr item[0])
-    else:
-      error("invalid stmt: " & repr item[0])
+          `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(data: `vitem`, label: `label`)
+    of (index_buffer = `list`):
+      index_buffer = dict.popped(list.strVal)
+      let label = newLit(shader.strVal & "-indices")
+      result.add quote do:
+        `tmp`.bindings.index_buffer = make BufferDesc(data: `index_buffer`, kind: bk_index, label: `label`)
+    of (fs_images[`texid`] = `imgdesc`):
+      let imgidx = fs.popped(texid.strVal)
+      let val = dict.popped(imgdesc.strVal)
+      var timg: NimNode
+      if val.getTypeInst.sameType getType(Image):
+        timg = val
+      elif val.getTypeInst.sameType getType(ImageDesc):
+        timg = newCall(bindSym "make", val)
+      result.add quote do:
+        `tmp`.bindings.fs_images[`imgidx`] = `timg`
+    of (vs_images[`texid`] = `imgdesc`):
+      let imgidx = vs.popped(texid.strVal)
+      let val = dict.popped(imgdesc.strVal)
+      var timg: NimNode
+      if val.getTypeInst.sameType getType(Image):
+        timg = val
+      elif val.getTypeInst.sameType getType(ImageDesc):
+        timg = newCall(bindSym "make", val)
+      result.add quote do:
+        `tmp`.bindings.vs_images[`imgidx`] = `timg`
+    of (colors[`oid`] = `value*`):
+      let colidx = outputs.popped(oid.strVal)
+      result.add quote do:
+        `tmp`.action.colors[`colidx`] = `value`
   let cshader = newCall(bindSym "make", shader)
   let clayout = newCall(bindSym "layout", shader)
   for buf in vertex_buffers: clayout.add buf.getType()[2]
