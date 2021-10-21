@@ -14,15 +14,15 @@ requires "chroma >= 0.2.5 & < 0.3"
 
 task download, "Download sokol shdc":
   when defined(windows):
-    const filename = "win32/sokol-shdc.exe"
+    const filename = "sokol-shdc-win32.exe"
   elif defined(macosx):
-    const filename = "osx/sokol-shdc"
+    const filename = "sokol-shdc-osx"
   elif defined(linux):
-    const filename = "linux/sokol-shdc"
+    const filename = "sokol-shdc-linux"
   else:
     echo "not support yet"
-  const HASH = "QmRUNL9Z7qmNiHUVevFK8oH3hcWiSN1oLGfkK8xp5AyjF6"
-  exec "curl -Lo " & toExe("tools/sokol-shdc") & " https://ipfs.io/ipfs/" & HASH & "/"  & filename
+  const TAG = "build-6f6ac9bf1c8963fba296841c5977a8b47bb09ce7"
+  exec "curl -Lo " & toExe("tools/sokol-shdc") & " https://github.com/codehz/sokol-tools/releases/download/" & TAG & "/"  & filename
   when not defined(windows):
     exec "chmod +x tools/sokol-shdc"
 
