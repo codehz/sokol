@@ -271,8 +271,11 @@ type
     start_canary: uint32
     size*: csize_t
     kind*: BufferKind
-    usage*: Usage
-    data*: RangePtr
+    case usage*: Usage:
+    of u_default, u_immutable:
+      data*: RangePtr
+    else:
+      discard
     label*: cstring
     opengl*: array[NUM_INFLIGHT_FRAMES, uint32]
     metal*: array[NUM_INFLIGHT_FRAMES, pointer]

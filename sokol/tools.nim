@@ -43,6 +43,8 @@ template uniforms(tab: untyped) {.pragma.}
 template instance*() {.pragma.}
 template step*(value: typed) {.pragma.}
 
+template usage*(value: Usage) {.pragma.}
+
 template normalized*() {.pragma.}
 template underlying*(t: typed) {.pragma.}
 type uint10* = distinct uint16
@@ -397,15 +399,28 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
     of (vertex_buffers = `list*`), (bindings.vertex_buffers = `list*`):
       for i, item in list.pairs:
         let vitem = dict.popped(item.strVal)
+        let vdef = getImpl(vitem)[0]
+        var usage = none NimNode
+        if vdef.kind == nnkPragmaExpr:
+          for pragma in vdef[1]:
+            case pragma:
+            of (usage: `value`):
+              if value.strVal != "u_immutable":
+                usage = some value
         vertex_buffers.add vitem
         let label = newLit(shader.strVal & "-" & item.strVal)
-        result.add quote do:
-          `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(data: `vitem`, label: `label`)
+        if usage.isNone:
+          result.add quote do:
+            `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(usage: u_immutable, data: `vitem`, label: `label`)
+        else:
+          let u = usage.get()
+          result.add quote do:
+            `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(usage: `u`, size: `vitem`.toRangePtr().size, label: `label`)
     of (index_buffer = `list`), (bindings.index_buffer = `list`):
       index_buffer = dict.popped(list.strVal)
       let label = newLit(shader.strVal & "-indices")
       result.add quote do:
-        `tmp`.bindings.index_buffer = make BufferDesc(data: `index_buffer`, kind: bk_index, label: `label`)
+        `tmp`.bindings.index_buffer = make BufferDesc(usage: u_immutable, data: `index_buffer`, kind: bk_index, label: `label`)
     of (fs_images[`texid`] = `imgdesc`), (bindings.fs_images[`texid`] = `imgdesc`):
       let imgidx = fs.popped(texid.strVal)
       let val = dict.popped(imgdesc.strVal)

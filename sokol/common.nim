@@ -66,27 +66,27 @@ type
     pf_etc2_rg11sn,
   RangePtr* = object
     head*: pointer
-    size*: int
+    size*: uint
   ConstView*[T] = distinct ptr T
   MaybeVar*[T] = T | var T
 
 func rangePtrFromArray*[T](arr: openArray[T]): RangePtr =
-  RangePtr(head: arr[0].unsafeAddr, size: sizeof(arr[0]) * arr.len)
+  RangePtr(head: arr[0].unsafeAddr, size: uint (sizeof(arr[0]) * arr.len))
 
 converter toRangePtr*[T](data: var T): RangePtr =
   when T is string:
-    RangePtr(head: data.cstring, size: data.len)
+    RangePtr(head: data.cstring, size: uint data.len)
   elif compiles(data.rangePtrFromArray):
     data.rangePtrFromArray
   else:
-    RangePtr(head: data.addr, size: sizeof(data))
+    RangePtr(head: data.addr, size: uint sizeof(data))
 converter toRangePtr*[T](data: T): RangePtr =
   when T is string:
-    RangePtr(head: data.cstring, size: data.len)
+    RangePtr(head: data.cstring, size: uint data.len)
   elif compiles(data.rangePtrFromArray):
     data.rangePtrFromArray
   else:
-    RangePtr(head: data.unsafeAddr, size: sizeof(data))
+    RangePtr(head: data.unsafeAddr, size: uint sizeof(data))
 
 template view*[T](data: MaybeVar[T]): ConstView[T] =
   when compiles(addr data):
