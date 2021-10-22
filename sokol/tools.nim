@@ -50,9 +50,6 @@ type uint10* = distinct uint16
 func packed(node: NimNode): NimNode =
   nnkPragmaExpr.newTree(node, nnkPragma.newTree(ident "packed"))
 
-func align16(node: NimNode): NimNode =
-  nnkPragmaExpr.newTree(node, nnkPragma.newTree(newCall("align", newLit 16)))
-
 func arrayty(count: Natural, node: NimNode): NimNode =
   if count == 1: return node
   nnkBracketExpr.newTree(bindSym "array", newLit count, node)
@@ -177,14 +174,18 @@ macro loadshader*(contents: static string) =
       let objfields = nnkRecList.newNimNode()
       let obj = nnkObjectTy.newTree(newEmptyNode(), newEmptyNode(), objfields)
       for field in body:
-        assert field.kind == nnkCommand
-        if field[0].strVal == "field":
-          let fn = field[1]
-          let ft = field[2]
-          let fc = field[3].intVal
+        case field:
+        of (field(`fn`, `ft`, `fc`)):
           objfields.add nnkIdentDefs.newTree(
-            fn.align16,
-            arrayty(fc, ft),
+            fn,
+            arrayty(fc.intVal, ft),
+            newEmptyNode()
+          )
+        of (padding(`off`, `len`)):
+          let padding = nskField.genSym "padding" & $off.intVal
+          objfields.add nnkIdentDefs.newTree(
+            padding,
+            arrayty(len.intVal, bindSym "byte"),
             newEmptyNode()
           )
       let struct = nnkTypeDef.newTree(
