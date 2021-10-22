@@ -262,10 +262,8 @@ macro compileshader*(content: static string) =
   doAssert code == 0, "Failed to compile shader: " & output & " code: " & $code
   genAst(output): loadshader output
 
-macro importshader*(filename: typed{nkStrLit}) =
-  let path = filename.lineInfoObj.filename.joinPath("..", filename.strVal)
-  let content = staticRead path
-  genAst(content): compileshader content
+template importshader*(filename: static string) =
+  compileshader staticRead filename
 
 func mapFormat(node: NimNode, normal: bool): VertexFormat =
   case node:
