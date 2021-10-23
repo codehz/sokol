@@ -1,7 +1,8 @@
 {.experimental: "caseStmtMacros".}
 
 import std/[macros, options, strutils, tables, os, genasts, sugar]
-import ./private/[backend, astpat]
+import dslutils/[astpat, metadata]
+import ./private/backend
 import ./gfx
 import ./common
 
@@ -363,7 +364,7 @@ func fix(expr: NimNode, replacements: Table[string, NimNode]): NimNode =
     expr[0] = fix(expr[0], replacements)
     expr
 
-macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, body: untyped{nkStmtList}): PassState =
+macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, body: untyped{nkStmtList}): untyped =
   result = newStmtList()
   let tmp = nskVar.genSym "tmp"
   result.add quote do:
@@ -377,6 +378,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   let st: NimNode = shader.getImpl[0][1]
   let cpipeline = nnkObjConstr.newTree(bindSym "PipelineDesc")
   let tpipeline = nskVar.genSym "pipeline_desc"
+  let meta = newNimNode nnkTableConstr
   result.add newVarStmt(tpipeline, cpipeline)
   for kv in st:
     case kv:
@@ -414,6 +416,7 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
             `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(usage: u_immutable, data: `vitem`, label: `label`)
         else:
           let u = usage.get()
+          meta.add newColonExpr(vitem, newLit i)
           result.add quote do:
             `tmp`.bindings.vertex_buffers[`i`] = make BufferDesc(usage: `u`, size: `vitem`.toRangePtr().size, label: `label`)
     of (index_buffer = `list`), (bindings.index_buffer = `list`):
@@ -475,6 +478,16 @@ macro build*(shader: ShaderDesc{`let`}, dictsrc: varargs[typed]{`let`|`var`}, bo
   cpipeline.add newColonExpr(ident "label", newLit(shader.strVal & "-pipeline"))
   result.add quote do:
     `tmp`.pipeline = make(`tpipeline`)
-  result.add tmp
-  # echo treerepr result
+  result.add newCall(bindSym "~~", tmp, meta)
+  # echo repr result
   return
+
+macro update*(state: WithoutMetadata[PassState], buffer: typed{`var`}) =
+  let metadata = state.metadata
+  metadata.expectKind nnkTableConstr
+  for kv in metadata:
+    if kv[0] == buffer:
+      let idx = kv[1]
+      return quote do:
+        `state`.bindings.vertex_buffers[`idx`].update(`buffer`)
+  error("unknown buffer")

@@ -10,6 +10,7 @@ installDirs   = @["upstream", "sokol", "tools"]
 # Dependencies
 
 requires "nim >= 1.4.8"
+requires "dslutils >= 0.1.1 & < 0.2"
 requires "chroma >= 0.2.5 & < 0.3"
 
 task download, "Download sokol shdc":
