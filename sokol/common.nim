@@ -66,27 +66,26 @@ type
     pf_etc2_rg11sn,
   RangePtr* = object
     head*: pointer
-    size*: uint
+    size*: csize_t
   ConstView*[T] = distinct ptr T
   MaybeVar*[T] = T | var T
 
-func rangePtrFromArray*[T](arr: openArray[T]): RangePtr =
-  RangePtr(head: arr[0].unsafeAddr, size: uint (sizeof(arr[0]) * arr.len))
+func openaddr[T](a: openArray[T]): ptr UncheckedArray[T] = {.emit: "return a;".}
 
 converter toRangePtr*[T](data: var T): RangePtr =
   when T is string:
-    RangePtr(head: data.cstring, size: uint data.len)
-  elif compiles(data.rangePtrFromArray):
-    data.rangePtrFromArray
+    RangePtr(head: data.cstring, size: csize_t data.len)
+  elif compiles(data.openaddr):
+    RangePtr(head: data.openaddr, size: csize_t(data[0].sizeof * data.len))
   else:
-    RangePtr(head: data.addr, size: uint sizeof(data))
+    RangePtr(head: data.addr, size: csize_t sizeof(data))
 converter toRangePtr*[T](data: T): RangePtr =
   when T is string:
-    RangePtr(head: data.cstring, size: uint data.len)
-  elif compiles(data.rangePtrFromArray):
-    data.rangePtrFromArray
+    RangePtr(head: data.cstring, size: csize_t data.len)
+  elif compiles(data.openaddr):
+    RangePtr(head: data.openaddr, size: csize_t(data[0].sizeof * data.len))
   else:
-    RangePtr(head: data.unsafeAddr, size: uint sizeof(data))
+    RangePtr(head: data.unsafeAddr, size: csize_t sizeof(data))
 
 template view*[T](data: MaybeVar[T]): ConstView[T] =
   when compiles(addr data):
@@ -125,11 +124,9 @@ macro fixConstView*(fn: typed{nkProcDef}) =
     let icv = pty.kind == nnkBracketExpr and pty[0] == bindSym "ConstView"
     if icv:
       needPatch = true
-    else:
-      paramsty.add param
     for name in param[0..^3]:
+      let vname = nskParam.genSym name.strVal
       if icv:
-        let vname = nskParam.genSym name.strVal
         argnames.add newCall(bindSym "view", vname)
         paramsty.add nnkIdentDefs.newTree(
           vname,
@@ -137,15 +134,22 @@ macro fixConstView*(fn: typed{nkProcDef}) =
           newEmptyNode()
         )
       else:
-        argnames.add name
+        argnames.add vname
+        paramsty.add nnkIdentDefs.newTree(
+          vname,
+          pty,
+          newEmptyNode()
+        )
+  assert needPatch
   result = newStmtList()
   let copied = copy fn
   let ret = copy fn
   let gname = nskProc.genSym tid.strVal
   copied[0] = gname
+  ret[0] = nnkPostfix.newTree(ident "*", ident tid.strVal)
   if not absImport:
     copied[4][importcloc] = nnkExprColonExpr.newTree(ident "importc", newLit tid.strVal)
-  ret[4].del importcloc
+  ret[4] = newEmptyNode()
   ret[6] = newCall(gname)
   for name in argnames:
     ret[6].add name
