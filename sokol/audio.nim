@@ -24,8 +24,9 @@ type
     stream_userdata_cb*: proc (buffer: ptr UncheckedArray[float32], num_frames, num_channels: int32, user_data: pointer) {.cdecl.}
     user_data*: pointer
 
+proc setup*(desc: ConstView[AudioDesc]) {.importc: "saudio_$1", fixConstView.}
+
 {.push importc: "saudio_$1", cdecl.}
-proc setup*(desc: ConstView[AudioDesc]) {.fixConstView.}
 proc shutdown*
 proc isvalid*: bool
 proc userdata*: pointer

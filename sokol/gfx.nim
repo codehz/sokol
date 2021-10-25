@@ -603,12 +603,14 @@ proc sg_draw(baseElement, numElements, numInstances: uint32) {.importc.}
 proc draw*[T, U, I: Ordinal](elements: HSlice[T, U], instances: I = 1) =
   sg_draw(uint32 elements.a, uint32 elements.b, uint32 instances)
 
+proc setup*(desc: ConstView[Desc]) {.importc: "sg_$1", fixConstView.}
+proc install_trace_hooks*(hooks: ConstView[TraceHooks]) {.importc: "sg_$1", fixConstView.}
+proc apply_uniforms*(stage: ShaderStage, ubIndex: uint32, data: ConstView[RangePtr]) {.importc: "sg_$1", fixConstView.}
+
 {.push importc: "sg_$1", cdecl.}
-proc setup*(desc: ConstView[Desc]) {.fixConstView.}
 proc shutdown*
 proc isvalid*: bool
 proc reset_state_cach*
-proc install_trace_hooks*(hooks: ConstView[TraceHooks]) {.fixConstView.}
 proc pushDebugGroup*(name: cstring)
 proc popDebugGroup*
 
@@ -621,7 +623,6 @@ proc apply_viewport*(x, y, width, height: int32, originTopLeft: bool)
 proc apply_viewportf*(x, y, width, height: float32, originTopLeft: bool)
 proc apply_scissor_rect*(x, y, width, height: int32, originTopLeft: bool)
 proc apply_scissor_rectf*(x, y, width, height: float32, originTopLeft: bool)
-proc apply_uniforms*(stage: ShaderStage, ubIndex: uint32, data: ConstView[RangePtr]) {.fixConstView.}
 # proc draw*(baseElement, numElements, numInstances: uint32)
 proc end_pass*
 proc commit*

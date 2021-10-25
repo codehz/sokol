@@ -240,6 +240,8 @@ type
     mod_mmb   = 10
   Modifiers* {.size(4).} = set[Modifier]
 
+proc set_icon*(icon: ConstView[IconDesc]) {.importc: "sapp_$1", fixConstView.}
+
 {.push importc: "sapp_$1", cdecl.}
 proc isvalid*: bool
 proc width*: uint32
@@ -282,7 +284,6 @@ proc set_clipboard_string*(str: cstring)
 proc get_clipboard_string*: cstring
 
 proc set_window_title*(title: cstring)
-proc set_icon*(icon: ConstView[IconDesc]) {.fixConstView.}
 
 proc get_num_dropped_files*: uint32
 proc get_dropped_file_path*(index: uint32): cstring
