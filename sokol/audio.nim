@@ -25,7 +25,7 @@ type
     user_data*: pointer
 
 {.push importc: "saudio_$1", cdecl.}
-proc setup*(desc: ConstView[AudioDesc])
+proc setup*(desc: ConstView[AudioDesc]) {.fixConstView.}
 proc shutdown*
 proc isvalid*: bool
 proc userdata*: pointer
